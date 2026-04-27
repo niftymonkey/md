@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { listDocs } from "@/lib/db";
+import { parseKind } from "@/lib/kind";
 
 function jsonError(status: number, message: string) {
   return new Response(JSON.stringify({ error: message }), {
@@ -27,11 +28,18 @@ export async function GET(req: NextRequest) {
   const cursor = searchParams.get("cursor") ?? undefined;
   const search = searchParams.get("search") ?? undefined;
 
+  const kindParam = searchParams.get("kind");
+  const kindResult = parseKind(kindParam);
+  if (!kindResult.ok) {
+    return jsonError(400, kindResult.error);
+  }
+
   const result = await listDocs({
     ownerId: auth.ownerId,
     limit,
     cursor,
     search,
+    kind: kindResult.value ?? undefined,
   });
 
   return new Response(
@@ -40,6 +48,7 @@ export async function GET(req: NextRequest) {
         id: d.id,
         slug: d.slug,
         title: d.title,
+        kind: d.kind,
         createdAt: d.createdAt,
       })),
       nextCursor: result.nextCursor,
