@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
-import { pingDatabase } from "@/lib/db";
+import { UploadForm } from "@/components/upload-form";
+import { DocList } from "@/components/doc-list";
 
 async function signOutAction() {
   "use server";
@@ -21,8 +22,7 @@ export default async function Home() {
         <div className="w-full max-w-md space-y-6 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Not authorized</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            <span className="font-mono">{user.email}</span> is not on the allow
-            list.
+            <span className="font-mono">{user.email}</span> is not on the allow list.
           </p>
           <form action={signOutAction}>
             <button
@@ -37,28 +37,30 @@ export default async function Home() {
     );
   }
 
-  await pingDatabase();
-
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md space-y-6 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">md</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Signed in as <span className="font-mono">{user.email}</span>. Database
-          reachable.
-        </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-500">
-          Upload UI lands in the next phase.
-        </p>
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+      <header className="mb-8 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">md</h1>
         <form action={signOutAction}>
           <button
             type="submit"
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
           >
             Sign out
           </button>
         </form>
-      </div>
+      </header>
+
+      <section className="mb-10">
+        <UploadForm />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+          Recent uploads
+        </h2>
+        <DocList ownerId={user.id} />
+      </section>
     </main>
   );
 }
