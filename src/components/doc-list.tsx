@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listDocs } from "@/lib/db";
+import { DeleteButton } from "@/components/delete-button";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
@@ -34,6 +35,7 @@ export async function DocList({ ownerId }: { ownerId: string }) {
               {DATE_FORMAT.format(doc.createdAt)} · /v/{doc.slug}
             </p>
           </div>
+          <DeleteButton slug={doc.slug} title={doc.title} />
         </li>
       ))}
     </ul>

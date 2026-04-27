@@ -82,6 +82,11 @@ export async function insertDoc(input: {
   return rowToDoc(row);
 }
 
+export async function deleteDocBySlug(slug: string): Promise<boolean> {
+  const result = await sql`DELETE FROM docs WHERE slug = ${slug}`;
+  return (result.rowCount ?? 0) > 0;
+}
+
 export async function getDocBySlug(slug: string): Promise<Doc | null> {
   const result = await sql<DocRow>`
     SELECT id, slug, owner_id, title, content, search_text, created_at, updated_at
