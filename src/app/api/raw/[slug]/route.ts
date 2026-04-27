@@ -25,6 +25,7 @@ export async function GET(
       JSON.stringify({
         slug: doc.slug,
         title: doc.title,
+        kind: doc.kind,
         content: doc.content,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,

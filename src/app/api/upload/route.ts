@@ -4,11 +4,12 @@ import { generateSlug } from "@/lib/slug";
 import { resolveTitle } from "@/lib/title";
 import { stripMarkdown } from "@/lib/strip-md";
 import { insertDoc } from "@/lib/db";
+import { parseKind } from "@/lib/kind";
 
 const MAX_BYTES = 1024 * 1024;
 const MAX_SLUG_RETRIES = 5;
 
-type UploadInput = { content: string; title?: string };
+type UploadInput = { content: string; title?: string; kind?: unknown };
 
 function jsonError(status: number, message: string) {
   return new Response(JSON.stringify({ error: message }), {
@@ -51,7 +52,12 @@ async function parseBody(req: NextRequest): Promise<UploadInput | { error: { sta
     return { error: { status: 413, message: "Content exceeds 1MB limit" } };
   }
   const headerTitle = req.headers.get("x-title");
-  return { content: text, title: headerTitle ?? undefined };
+  const headerKind = req.headers.get("x-kind");
+  return {
+    content: text,
+    title: headerTitle ?? undefined,
+    kind: headerKind ?? undefined,
+  };
 }
 
 function buildViewUrl(req: NextRequest, slug: string): string {
@@ -84,6 +90,11 @@ export async function POST(req: NextRequest) {
     return jsonError(400, "Content is empty");
   }
 
+  const kindResult = parseKind(parsed.kind);
+  if (!kindResult.ok) {
+    return jsonError(400, kindResult.error);
+  }
+
   const title = resolveTitle(content, parsed.title);
   const searchText = stripMarkdown(content);
 
@@ -96,6 +107,7 @@ export async function POST(req: NextRequest) {
         ownerId: auth.ownerId,
         title,
         content,
+        kind: kindResult.value,
         searchText,
       });
       const viewUrl = buildViewUrl(req, doc.slug);
@@ -111,6 +123,7 @@ export async function POST(req: NextRequest) {
           id: doc.id,
           slug: doc.slug,
           title: doc.title,
+          kind: doc.kind,
           viewUrl,
           createdAt: doc.createdAt,
         }),
