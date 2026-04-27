@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# md
 
-## Getting Started
+Upload Markdown, get a shareable rendered link. Lives at [md.niftymonkey.dev](https://md.niftymonkey.dev).
 
-First, run the development server:
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Required env vars are listed in `.env.example`. Copy it to `.env.local` and fill in values.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Stack
 
-## Learn More
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS v4
+- Vercel Postgres (Neon-backed) + `pg_trgm` for full-text + fuzzy search
+- WorkOS AuthKit (`@workos-inc/authkit-nextjs`) for UI auth
+- `react-markdown` + `remark-gfm` + `rehype-shiki` for rendering
+- Mermaid (client-hydrated) for diagrams
 
-To learn more about Next.js, take a look at the following resources:
+## API
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Upload via curl:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+curl --data-binary @doc.md \
+  -H "Content-Type: text/markdown" \
+  -H "Authorization: Bearer $MD_API_KEY" \
+  https://md.niftymonkey.dev/api/upload
+```
 
-## Deploy on Vercel
+Or JSON:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+curl -d '{"content":"# hello","title":"My Doc"}' \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MD_API_KEY" \
+  https://md.niftymonkey.dev/api/upload
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Add `Accept: text/plain` to get just the URL on stdout (pipe-friendly).
