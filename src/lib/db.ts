@@ -110,27 +110,87 @@ export type ListDocsResult = {
   nextCursor: string | null;
 };
 
+function buildTsQuery(search: string): string {
+  return search
+    .toLowerCase()
+    .replace(/[&|!():*<>'"\\]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 0)
+    .map((t) => `${t}:*`)
+    .join(" & ");
+}
+
+type CursorPayload = { createdAt: Date; id: string };
+
+function encodeCursor(row: { created_at: Date; id: string }): string {
+  return Buffer.from(`${row.created_at.toISOString()}|${row.id}`).toString(
+    "base64url",
+  );
+}
+
+function decodeCursor(cursor: string): CursorPayload | null {
+  try {
+    const decoded = Buffer.from(cursor, "base64url").toString("utf8");
+    const sep = decoded.indexOf("|");
+    if (sep <= 0) return null;
+    const ts = decoded.slice(0, sep);
+    const id = decoded.slice(sep + 1);
+    if (!id) return null;
+    const date = new Date(ts);
+    if (isNaN(date.getTime())) return null;
+    return { createdAt: date, id };
+  } catch {
+    return null;
+  }
+}
+
 export async function listDocs(args: ListDocsArgs): Promise<ListDocsResult> {
   const limit = Math.max(1, Math.min(100, args.limit ?? 20));
-  // v1 path: no search, no cursor — owner-scoped recent N.
-  // Search/cursor branches are scaffolded for the next iteration.
-  if (!args.search && !args.cursor) {
+  const search = args.search?.trim();
+
+  // Search branch: rank by FTS relevance. Cursor pagination not supported with
+  // search in v1 — caller should rely on search precision and the limit.
+  if (search) {
+    const tsQuery = buildTsQuery(search);
+    if (!tsQuery) {
+      return { docs: [], nextCursor: null };
+    }
     const result = await sql<DocSummaryRow>`
       SELECT id, slug, title, created_at, updated_at
       FROM docs
       WHERE owner_id = ${args.ownerId}
-      ORDER BY created_at DESC, id DESC
-      LIMIT ${limit + 1}
+        AND search_vector @@ to_tsquery('english', ${tsQuery})
+      ORDER BY ts_rank(search_vector, to_tsquery('english', ${tsQuery})) DESC,
+               created_at DESC,
+               id DESC
+      LIMIT ${limit}
     `;
-    const rows = result.rows;
-    const hasMore = rows.length > limit;
-    const page = hasMore ? rows.slice(0, limit) : rows;
-    const last = page[page.length - 1];
-    const nextCursor =
-      hasMore && last
-        ? Buffer.from(`${last.created_at.toISOString()}|${last.id}`).toString("base64url")
-        : null;
-    return { docs: page.map(rowToSummary), nextCursor };
+    return { docs: result.rows.map(rowToSummary), nextCursor: null };
   }
-  throw new Error("listDocs search/cursor branches not yet implemented");
+
+  // Recent-first listing with cursor pagination.
+  const cursor = args.cursor ? decodeCursor(args.cursor) : null;
+  const result = cursor
+    ? await sql<DocSummaryRow>`
+        SELECT id, slug, title, created_at, updated_at
+        FROM docs
+        WHERE owner_id = ${args.ownerId}
+          AND (created_at, id) < (${cursor.createdAt.toISOString()}, ${cursor.id})
+        ORDER BY created_at DESC, id DESC
+        LIMIT ${limit + 1}
+      `
+    : await sql<DocSummaryRow>`
+        SELECT id, slug, title, created_at, updated_at
+        FROM docs
+        WHERE owner_id = ${args.ownerId}
+        ORDER BY created_at DESC, id DESC
+        LIMIT ${limit + 1}
+      `;
+
+  const rows = result.rows;
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const last = page[page.length - 1];
+  const nextCursor = hasMore && last ? encodeCursor(last) : null;
+  return { docs: page.map(rowToSummary), nextCursor };
 }
