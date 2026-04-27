@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# operator-only Claude context (gitignored — stays on the operator's machine)
+CLAUDE.local.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
