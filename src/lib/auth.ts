@@ -5,8 +5,10 @@ export type AuthResult =
   | { authenticated: true; ownerId: string; via: "bearer" | "session" }
   | { authenticated: false; status: 401 | 403; reason: string };
 
-const API_KEY = process.env.MD_API_KEY ?? "";
-const API_OWNER_ID = process.env.MD_API_OWNER_ID ?? "";
+// Trim env values to defend against accidental trailing whitespace (e.g. from
+// `echo "..." | vercel env add`, which pipes a trailing newline into the value).
+const API_KEY = (process.env.MD_API_KEY ?? "").trim();
+const API_OWNER_ID = (process.env.MD_API_OWNER_ID ?? "").trim();
 
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
