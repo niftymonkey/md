@@ -3,6 +3,7 @@ import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { UploadForm } from "@/components/upload-form";
 import { DocList } from "@/components/doc-list";
+import { SiteHeader } from "@/components/site-header";
 
 async function signOutAction() {
   "use server";
@@ -38,29 +39,20 @@ export default async function Home() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-      <header className="mb-8 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">md</h1>
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-          >
-            Sign out
-          </button>
-        </form>
-      </header>
+    <>
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+        <section className="mb-10">
+          <UploadForm />
+        </section>
 
-      <section className="mb-10">
-        <UploadForm />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-          Recent uploads
-        </h2>
-        <DocList ownerId={user.id} />
-      </section>
-    </main>
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+            Recent uploads
+          </h2>
+          <DocList ownerId={user.id} />
+        </section>
+      </main>
+    </>
   );
 }
