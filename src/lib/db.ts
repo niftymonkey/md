@@ -91,6 +91,48 @@ export async function insertDoc(input: {
   return rowToDoc(row);
 }
 
+export type UpdateDocFields = {
+  title?: string;
+  content?: string;
+  searchText?: string;
+  kind?: string | null;
+};
+
+export async function updateDocBySlug(
+  slug: string,
+  fields: UpdateDocFields,
+): Promise<Doc | null> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  function bind(value: unknown): string {
+    values.push(value);
+    return `$${values.length}`;
+  }
+  if (fields.title !== undefined) sets.push(`title = ${bind(fields.title)}`);
+  if (fields.content !== undefined) sets.push(`content = ${bind(fields.content)}`);
+  if (fields.searchText !== undefined)
+    sets.push(`search_text = ${bind(fields.searchText)}`);
+  if (fields.kind !== undefined) sets.push(`kind = ${bind(fields.kind)}`);
+
+  if (sets.length === 0) {
+    // Nothing to update — caller shouldn't reach here, but treat as a read.
+    return getDocBySlug(slug);
+  }
+
+  sets.push(`updated_at = now()`);
+  const slugParam = bind(slug);
+  const text = `
+    UPDATE docs
+    SET ${sets.join(", ")}
+    WHERE slug = ${slugParam}
+    RETURNING id, slug, owner_id, title, content, kind, search_text, created_at, updated_at
+  `;
+
+  const result = await sql.query<DocRow>(text, values);
+  const row = result.rows[0];
+  return row ? rowToDoc(row) : null;
+}
+
 export async function deleteDocBySlug(slug: string): Promise<boolean> {
   const result = await sql`DELETE FROM docs WHERE slug = ${slug}`;
   return (result.rowCount ?? 0) > 0;
