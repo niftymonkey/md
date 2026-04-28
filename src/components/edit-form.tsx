@@ -68,7 +68,6 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
 
     startTransition(() => {
       router.push(`/v/${slug}`);
-      router.refresh();
     });
   }
 
@@ -79,6 +78,7 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Title (clear to re-derive from first heading)"
+        aria-label="Title"
         className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
       />
       <input
@@ -86,6 +86,7 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
         value={kind}
         onChange={(e) => setKind(e.target.value)}
         placeholder="Kind (optional, e.g. note, rep, synthesis)"
+        aria-label="Kind (optional)"
         className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
       />
       <textarea
@@ -93,6 +94,7 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
         onChange={(e) => setContent(e.target.value)}
         rows={20}
         spellCheck={false}
+        aria-label="Markdown content"
         className="block w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
       />
       <div className="flex flex-wrap items-center gap-3">

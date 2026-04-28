@@ -133,8 +133,13 @@ export async function updateDocBySlug(
   return row ? rowToDoc(row) : null;
 }
 
-export async function deleteDocBySlug(slug: string): Promise<boolean> {
-  const result = await sql`DELETE FROM docs WHERE slug = ${slug}`;
+export async function deleteDocBySlug(
+  slug: string,
+  ownerId: string,
+): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM docs WHERE slug = ${slug} AND owner_id = ${ownerId}
+  `;
   return (result.rowCount ?? 0) > 0;
 }
 

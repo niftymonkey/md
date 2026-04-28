@@ -30,8 +30,10 @@ export async function DELETE(
   }
 
   const { slug } = await context.params;
-  const deleted = await deleteDocBySlug(slug);
+  const deleted = await deleteDocBySlug(slug, auth.ownerId);
   if (!deleted) {
+    // 404 covers both "doesn't exist" and "exists but you don't own it" — don't
+    // leak existence to non-owners.
     return jsonError(404, "Document not found");
   }
   revalidatePath("/");
@@ -110,7 +112,8 @@ export async function PATCH(
   }
 
   const existing = await getDocBySlug(slug);
-  if (!existing) {
+  if (!existing || existing.ownerId !== auth.ownerId) {
+    // 404 (not 403) on owner mismatch — don't leak existence to non-owners.
     return jsonError(404, "Document not found");
   }
 

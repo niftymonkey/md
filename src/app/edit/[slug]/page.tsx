@@ -21,7 +21,7 @@ export default async function EditPage({ params }: PageProps) {
 
   const { slug } = await params;
   const doc = await getDocBySlug(slug);
-  if (!doc) notFound();
+  if (!doc || doc.ownerId !== user.id) notFound();
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
