@@ -29,7 +29,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${interTight.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var w=localStorage.getItem('md.width');if(w==='wide')document.documentElement.setAttribute('data-width','wide');var o=localStorage.getItem('md.outline.shown');if(o==='false')document.documentElement.setAttribute('data-outline-hidden','1');var t=localStorage.getItem('md.dev-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-paper text-ink">
         <AuthKitProvider>{children}</AuthKitProvider>
         <Toaster richColors position="top-center" />

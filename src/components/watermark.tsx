@@ -4,12 +4,21 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 type Variant = "reader" | "operator" | "editor" | "settings";
 
+type Width = "reading" | "wide";
+
 type WatermarkProps = {
   variant: Variant;
   rawHref?: string;
+  width?: Width;
+  onWidthChange?: (next: Width) => void;
 };
 
-export function Watermark({ variant, rawHref }: WatermarkProps) {
+export function Watermark({
+  variant,
+  rawHref,
+  width,
+  onWidthChange,
+}: WatermarkProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +45,7 @@ export function Watermark({ variant, rawHref }: WatermarkProps) {
       <button
         type="button"
         aria-label="md.niftymonkey.dev menu"
+        title="md.niftymonkey.dev menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="watermark-glyph relative grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-ochre transition-[border-color] duration-200 hover:border-ochre"
@@ -43,18 +53,27 @@ export function Watermark({ variant, rawHref }: WatermarkProps) {
         <MdGlyph />
         <span className="watermark-underline pointer-events-none absolute -bottom-[7px] left-0 h-[2px] w-full bg-ochre" />
       </button>
-      {open && <Menu variant={variant} rawHref={rawHref} />}
+      {open && (
+        <Menu
+          variant={variant}
+          rawHref={rawHref}
+          width={width}
+          onWidthChange={onWidthChange}
+        />
+      )}
     </div>
   );
 }
 
-function Menu({ variant, rawHref }: WatermarkProps) {
+function Menu({ variant, rawHref, width, onWidthChange }: WatermarkProps) {
   return (
     <div
       role="menu"
       className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-[280px] rounded-lg border border-border bg-paper p-2 shadow-[var(--shadow-soft)]"
     >
-      {variant === "reader" && <ReaderRows rawHref={rawHref} />}
+      {variant === "reader" && (
+        <ReaderRows rawHref={rawHref} width={width} onWidthChange={onWidthChange} />
+      )}
       {variant === "operator" && <OperatorRows />}
       {variant === "editor" && <EditorRows />}
       {variant === "settings" && <SettingsRows />}
@@ -64,22 +83,70 @@ function Menu({ variant, rawHref }: WatermarkProps) {
   );
 }
 
-function ReaderRows({ rawHref }: { rawHref?: string }) {
+function ReaderRows({
+  rawHref,
+  width,
+  onWidthChange,
+}: {
+  rawHref?: string;
+  width?: Width;
+  onWidthChange?: (next: Width) => void;
+}) {
   function copyLink() {
     if (typeof window === "undefined") return;
     void navigator.clipboard.writeText(window.location.href);
   }
   return (
-    <Group label="Document">
-      {rawHref && (
-        <RowLink href={rawHref} kbd="r">
-          View raw
-        </RowLink>
+    <>
+      <Group label="Document">
+        {rawHref && (
+          <RowLink href={rawHref} kbd="r">
+            View raw
+          </RowLink>
+        )}
+        <RowButton onClick={copyLink} kbd="c">
+          Copy link
+        </RowButton>
+      </Group>
+      {width && onWidthChange && (
+        <>
+          <GroupDivider />
+          <Group label="View">
+            <WidthPill value={width} onChange={onWidthChange} />
+          </Group>
+        </>
       )}
-      <RowButton onClick={copyLink} kbd="c">
-        Copy link
-      </RowButton>
-    </Group>
+    </>
+  );
+}
+
+function WidthPill({
+  value,
+  onChange,
+}: {
+  value: Width;
+  onChange: (next: Width) => void;
+}) {
+  return (
+    <div className="mt-0.5 flex items-center justify-between rounded-md px-2 py-1.5">
+      <span className="text-sm text-ink">Width</span>
+      <div className="flex rounded-md border border-border bg-paper-warm p-0.5 text-[0.6875rem] font-mono">
+        {(["reading", "wide"] as const).map((w) => (
+          <button
+            key={w}
+            type="button"
+            onClick={() => onChange(w)}
+            className={
+              value === w
+                ? "cursor-pointer rounded-[4px] bg-ochre px-2 py-0.5 text-paper"
+                : "cursor-pointer rounded-[4px] px-2 py-0.5 text-muted hover:text-ink"
+            }
+          >
+            {w}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

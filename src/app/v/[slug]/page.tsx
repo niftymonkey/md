@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getDocBySlug } from "@/lib/db";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { SiteHeader } from "@/components/site-header";
+import { ReaderShell } from "@/components/reader-shell";
+import { parseHeadings } from "@/lib/heading-utils";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function buildDescription(searchText: string | null): string | undefined {
@@ -42,27 +43,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ViewPage({ params }: PageProps) {
+export default async function ViewPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const search = await searchParams;
+  if (search.raw === "1") redirect(`/api/raw/${slug}`);
+
   const doc = await getDocBySlug(slug);
   if (!doc) notFound();
 
+  const headings = parseHeadings(doc.content);
+  const hasOutline = headings.filter((h) => h.level === 2).length >= 3;
+
   return (
-    <>
-      <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl px-6 py-10">
-        <article className="prose prose-zinc dark:prose-invert max-w-none prose-pre:bg-transparent prose-pre:p-0">
-          <MarkdownRenderer content={doc.content} />
-        </article>
-        <footer className="mt-16 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-zinc-200 pt-6 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
-          <Link href={`/api/raw/${doc.slug}`} className="hover:underline">
-            View raw
-          </Link>
-          <Link href="/" className="hover:underline">
-            md.niftymonkey.dev
-          </Link>
-        </footer>
-      </main>
-    </>
+    <ReaderShell
+      rawHref={`/api/raw/${doc.slug}`}
+      hasOutline={hasOutline}
+      headings={headings}
+    >
+      <MarkdownRenderer content={doc.content} />
+    </ReaderShell>
   );
 }
