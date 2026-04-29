@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 const MAX_BYTES = 1024 * 1024;
 
@@ -17,6 +16,7 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
   const [content, setContent] = useState(initialContent);
   const [title, setTitle] = useState(initialTitle);
   const [kind, setKind] = useState(initialKind ?? "");
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -26,12 +26,13 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
     kind !== (initialKind ?? "");
 
   async function save() {
+    setError(null);
     if (!content.trim()) {
-      toast.error("Content is empty");
+      setError("Content is empty");
       return;
     }
     if (new Blob([content]).size > MAX_BYTES) {
-      toast.error("Content exceeds 1MB limit");
+      setError("Content exceeds 1MB limit");
       return;
     }
 
@@ -50,7 +51,7 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
         body: JSON.stringify(payload),
       });
     } catch {
-      toast.error("Network error");
+      setError("Network error");
       return;
     }
 
@@ -62,7 +63,7 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
       } catch {
         // ignore JSON parse failure
       }
-      toast.error(message);
+      setError(message);
       return;
     }
 
@@ -97,6 +98,11 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
         aria-label="Markdown content"
         className="block w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
       />
+      {error && (
+        <p className="text-sm text-ochre" role="alert">
+          {error}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"

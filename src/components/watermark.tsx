@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useIsMac } from "@/lib/use-is-mac";
+
+function renderKey(k: string, isMac: boolean): string {
+  if (k === "mod") return isMac ? "⌘" : "Ctrl";
+  if (k === "shift") return isMac ? "⇧" : "Shift";
+  if (k === "alt") return isMac ? "⌥" : "Alt";
+  if (k.length === 1) return k.toUpperCase();
+  return k;
+}
 
 type Variant = "reader" | "operator" | "editor" | "settings";
 
@@ -11,6 +20,7 @@ type WatermarkProps = {
   rawHref?: string;
   width?: Width;
   onWidthChange?: (next: Width) => void;
+  signOutAction?: () => Promise<void>;
 };
 
 export function Watermark({
@@ -18,6 +28,7 @@ export function Watermark({
   rawHref,
   width,
   onWidthChange,
+  signOutAction,
 }: WatermarkProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,26 +70,34 @@ export function Watermark({
           rawHref={rawHref}
           width={width}
           onWidthChange={onWidthChange}
+          signOutAction={signOutAction}
         />
       )}
     </div>
   );
 }
 
-function Menu({ variant, rawHref, width, onWidthChange }: WatermarkProps) {
+function Menu({
+  variant,
+  rawHref,
+  width,
+  onWidthChange,
+  signOutAction,
+}: WatermarkProps) {
   return (
     <div
       role="menu"
-      className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-[280px] rounded-lg border border-border bg-paper p-2 shadow-[var(--shadow-soft)]"
+      className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-[280px] rounded-lg border border-border bg-paper p-2.5 shadow-[var(--shadow-soft)]"
     >
       {variant === "reader" && (
         <ReaderRows rawHref={rawHref} width={width} onWidthChange={onWidthChange} />
       )}
-      {variant === "operator" && <OperatorRows />}
+      {variant === "operator" && <OperatorRows signOutAction={signOutAction} />}
       {variant === "editor" && <EditorRows />}
       {variant === "settings" && <SettingsRows />}
-      <GroupDivider />
-      <RowLabel>md.niftymonkey.dev</RowLabel>
+      <Group>
+        <RowLabel>md.niftymonkey.dev</RowLabel>
+      </Group>
     </div>
   );
 }
@@ -92,35 +111,140 @@ function ReaderRows({
   width?: Width;
   onWidthChange?: (next: Width) => void;
 }) {
+  const [copied, setCopied] = useState(false);
   function copyLink() {
     if (typeof window === "undefined") return;
-    void navigator.clipboard.writeText(window.location.href);
+    void navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    });
   }
   return (
     <>
-      <Group label="Document">
+      <Group label="document">
         {rawHref && (
-          <RowLink href={rawHref} kbd="r">
-            View raw
+          <RowLink href={rawHref} kbd={["r"]} icon={<RawIcon />}>
+            view raw
           </RowLink>
         )}
-        <RowButton onClick={copyLink} kbd="c">
-          Copy link
+        <RowButton
+          onClick={copyLink}
+          kbd={copied ? undefined : ["c"]}
+          rightSlot={copied ? <CopiedBadge /> : undefined}
+          icon={<LinkIcon />}
+        >
+          {copied ? "copied" : "copy link"}
         </RowButton>
       </Group>
       {width && onWidthChange && (
-        <>
-          <GroupDivider />
-          <Group label="View">
-            <WidthPill value={width} onChange={onWidthChange} />
-          </Group>
-        </>
+        <Group label="view">
+          <WidthRow value={width} onChange={onWidthChange} />
+        </Group>
       )}
     </>
   );
 }
 
-function WidthPill({
+function CopiedBadge() {
+  return (
+    <span className="text-ochre">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-3.5"
+        aria-hidden="true"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+  );
+}
+
+function OperatorRows({
+  signOutAction,
+}: {
+  signOutAction?: () => Promise<void>;
+}) {
+  return (
+    <>
+      <Group label="operator">
+        <RowSoon icon={<CommandIcon />} kbd={["mod", "K"]}>
+          command palette
+        </RowSoon>
+        <RowSoon icon={<SettingsIcon />}>settings</RowSoon>
+        <RowSoon icon={<ListIcon />}>all docs</RowSoon>
+      </Group>
+      {signOutAction && (
+        <Group>
+          <RowButton onClick={() => void signOutAction()} icon={<SignOutIcon />}>
+            sign out
+          </RowButton>
+        </Group>
+      )}
+    </>
+  );
+}
+
+function RowSoon({
+  icon,
+  kbd,
+  children,
+}: {
+  icon?: ReactNode;
+  kbd?: string[];
+  children: ReactNode;
+}) {
+  return (
+    <div
+      role="menuitem"
+      aria-disabled
+      className="flex w-full cursor-not-allowed items-center justify-between gap-3 rounded-md px-2 py-[7px] text-sm text-muted"
+    >
+      <span className="flex items-center gap-2">
+        {icon && (
+          <span className="grid size-3.5 place-items-center text-muted/70">
+            {icon}
+          </span>
+        )}
+        <span>{children}</span>
+      </span>
+      {kbd && <Kbd keys={kbd} />}
+    </div>
+  );
+}
+
+function EditorRows() {
+  return (
+    <Group label="editing">
+      <RowButton kbd={["mod", "S"]} icon={<SaveIcon />}>
+        save
+      </RowButton>
+      <RowButton kbd={["Esc"]} icon={<CancelIcon />}>
+        cancel
+      </RowButton>
+    </Group>
+  );
+}
+
+function SettingsRows() {
+  return (
+    <Group label="settings">
+      <RowSoon icon={<CommandIcon />} kbd={["mod", "K"]}>
+        command palette
+      </RowSoon>
+      <RowLink href="/" icon={<BackIcon />}>
+        back to dashboard
+      </RowLink>
+    </Group>
+  );
+}
+
+function WidthRow({
   value,
   onChange,
 }: {
@@ -128,9 +252,14 @@ function WidthPill({
   onChange: (next: Width) => void;
 }) {
   return (
-    <div className="mt-0.5 flex items-center justify-between rounded-md px-2 py-1.5">
-      <span className="text-sm text-ink">Width</span>
-      <div className="flex rounded-md border border-border bg-paper-warm p-0.5 text-[0.6875rem] font-mono">
+    <div className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-sm text-ink">
+      <span className="flex items-center gap-2">
+        <span className="grid size-3.5 place-items-center text-muted">
+          <WidthIcon />
+        </span>
+        <span>width</span>
+      </span>
+      <div className="flex overflow-hidden rounded-full border border-border">
         {(["reading", "wide"] as const).map((w) => (
           <button
             key={w}
@@ -138,8 +267,8 @@ function WidthPill({
             onClick={() => onChange(w)}
             className={
               value === w
-                ? "cursor-pointer rounded-[4px] bg-ochre px-2 py-0.5 text-paper"
-                : "cursor-pointer rounded-[4px] px-2 py-0.5 text-muted hover:text-ink"
+                ? "bg-ochre px-2.5 py-[3px] font-mono text-[0.6875rem] font-semibold text-paper"
+                : "bg-transparent px-2.5 py-[3px] font-mono text-[0.6875rem] font-medium text-muted transition-colors hover:text-ink"
             }
           >
             {w}
@@ -150,50 +279,20 @@ function WidthPill({
   );
 }
 
-function OperatorRows() {
+function Group({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <Group label="Operator">
-      <RowButton kbd="⌘K">Command palette</RowButton>
-      <RowLink href="/settings">Settings</RowLink>
-      <RowLink href="/all">All docs</RowLink>
-    </Group>
-  );
-}
-
-function EditorRows() {
-  return (
-    <Group label="Editing">
-      <RowButton kbd="⌘S">Save</RowButton>
-      <RowButton kbd="Esc">Cancel</RowButton>
-    </Group>
-  );
-}
-
-function SettingsRows() {
-  return (
-    <Group label="Settings">
-      <RowButton kbd="⌘K">Command palette</RowButton>
-      <RowLink href="/">Back to dashboard</RowLink>
-    </Group>
-  );
-}
-
-function Group({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="px-1 pb-1">
-      <RowLabel>{label}</RowLabel>
-      <div className="mt-1 flex flex-col">{children}</div>
+    <div className="px-1 py-1.5 [&+&]:mt-1 [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
+      {label && <RowLabel>{label}</RowLabel>}
+      <div className={label ? "mt-1 flex flex-col" : "flex flex-col"}>
+        {children}
+      </div>
     </div>
   );
 }
 
-function GroupDivider() {
-  return <div className="my-1 h-px bg-border" />;
-}
-
 function RowLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="px-2 pt-1 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
+    <div className="px-2 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted">
       {children}
     </div>
   );
@@ -202,20 +301,29 @@ function RowLabel({ children }: { children: ReactNode }) {
 function RowLink({
   href,
   kbd,
+  icon,
   children,
 }: {
   href: string;
-  kbd?: string;
+  kbd?: string[];
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <a
       href={href}
       role="menuitem"
-      className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-ink hover:bg-paper-warm"
+      className="flex items-center justify-between gap-3 rounded-md px-2 py-[7px] text-sm text-ink transition-colors hover:bg-paper-warm"
     >
-      <span>{children}</span>
-      {kbd && <Kbd>{kbd}</Kbd>}
+      <span className="flex items-center gap-2">
+        {icon && (
+          <span className="grid size-3.5 place-items-center text-muted">
+            {icon}
+          </span>
+        )}
+        <span>{children}</span>
+      </span>
+      {kbd && <Kbd keys={kbd} />}
     </a>
   );
 }
@@ -223,10 +331,14 @@ function RowLink({
 function RowButton({
   onClick,
   kbd,
+  icon,
+  rightSlot,
   children,
 }: {
   onClick?: () => void;
-  kbd?: string;
+  kbd?: string[];
+  icon?: ReactNode;
+  rightSlot?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -234,19 +346,34 @@ function RowButton({
       type="button"
       onClick={onClick}
       role="menuitem"
-      className="flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-ink hover:bg-paper-warm"
+      className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-[7px] text-left text-sm text-ink transition-colors hover:bg-paper-warm"
     >
-      <span>{children}</span>
-      {kbd && <Kbd>{kbd}</Kbd>}
+      <span className="flex items-center gap-2">
+        {icon && (
+          <span className="grid size-3.5 place-items-center text-muted">
+            {icon}
+          </span>
+        )}
+        <span>{children}</span>
+      </span>
+      {rightSlot ?? (kbd && <Kbd keys={kbd} />)}
     </button>
   );
 }
 
-function Kbd({ children }: { children: ReactNode }) {
+function Kbd({ keys }: { keys: string[] }) {
+  const isMac = useIsMac();
   return (
-    <kbd className="ml-3 rounded border border-border bg-paper-warm px-1.5 py-0.5 font-mono text-[0.6875rem] font-medium text-muted">
-      {children}
-    </kbd>
+    <span className="flex items-center gap-1">
+      {keys.map((k, i) => (
+        <kbd
+          key={i}
+          className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+        >
+          {renderKey(k, isMac)}
+        </kbd>
+      ))}
+    </span>
   );
 }
 
@@ -265,6 +392,116 @@ function MdGlyph() {
     >
       <path d="M3 19V5l5 7 5-7v14" />
       <path d="M16 5l5 14" />
+    </svg>
+  );
+}
+
+function strokeProps() {
+  return {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 24 24",
+    fill: "none" as const,
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className: "size-3.5",
+    "aria-hidden": true,
+  };
+}
+
+function RawIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5" />
+      <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19" />
+    </svg>
+  );
+}
+
+function CommandIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M9 6V4.5a2.5 2.5 0 1 0-2.5 2.5H9zm0 0v12m0-12h6m0 0V4.5A2.5 2.5 0 1 1 17.5 7H15zm0 0v12m0 0v1.5a2.5 2.5 0 1 0 2.5-2.5H15zm0 0H9m0 0v1.5A2.5 2.5 0 1 1 6.5 17H9z" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
+
+function SignOutIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+function SaveIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
+  );
+}
+
+function CancelIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  );
+}
+
+function WidthIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <polyline points="9 18 3 12 9 6" />
+      <polyline points="15 6 21 12 15 18" />
+      <line x1="3" y1="12" x2="21" y2="12" />
     </svg>
   );
 }

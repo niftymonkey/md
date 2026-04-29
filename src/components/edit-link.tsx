@@ -6,7 +6,7 @@ export function EditLink({ slug, title }: { slug: string; title: string }) {
       href={`/edit/${slug}`}
       aria-label={`Edit ${title}`}
       prefetch={false}
-      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+      className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-paper hover:text-ochre"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

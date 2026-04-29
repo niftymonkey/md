@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter_Tight, Geist_Mono } from "next/font/google";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
-import { Toaster } from "sonner";
 import { DevThemeSwitcher } from "@/components/dev-theme-switcher";
 import "./globals.css";
 
@@ -40,7 +39,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-paper text-ink">
         <AuthKitProvider>{children}</AuthKitProvider>
-        <Toaster richColors position="top-center" />
         {process.env.NODE_ENV === "development" && <DevThemeSwitcher />}
       </body>
     </html>

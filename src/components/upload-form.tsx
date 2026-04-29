@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { Watermark } from "./watermark";
 
 const MAX_BYTES = 1024 * 1024;
 const ACCEPTED_EXTENSIONS = [".md", ".markdown"];
@@ -14,11 +14,15 @@ function isAcceptedFile(file: File): boolean {
   return false;
 }
 
-export function UploadForm() {
+export function UploadForm({
+  signOutAction,
+}: {
+  signOutAction?: () => Promise<void>;
+}) {
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-  const [titleEdited, setTitleEdited] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -39,11 +43,9 @@ export function UploadForm() {
     try {
       const text = await readFileAsText(file);
       setContent(text);
-      if (!titleEdited) {
-        setTitle(file.name.replace(/\.(md|markdown)$/i, ""));
-      }
+      setError(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to read file");
+      setError(err instanceof Error ? err.message : "Failed to read file");
     }
   }
 
@@ -64,12 +66,13 @@ export function UploadForm() {
   }
 
   async function submit() {
+    setError(null);
     if (!content.trim()) {
-      toast.error("Content is empty");
+      setError("Content is empty");
       return;
     }
     if (new Blob([content]).size > MAX_BYTES) {
-      toast.error("Content exceeds 1MB limit");
+      setError("Content exceeds 1MB limit");
       return;
     }
 
@@ -84,7 +87,7 @@ export function UploadForm() {
         body: JSON.stringify(payload),
       });
     } catch {
-      toast.error("Network error");
+      setError("Network error");
       return;
     }
 
@@ -96,80 +99,80 @@ export function UploadForm() {
       } catch {
         // ignore JSON parse failure; keep status-based message
       }
-      toast.error(message);
+      setError(message);
       return;
     }
 
-    const data = (await response.json()) as { viewUrl: string; title: string };
-
-    toast.success(data.title || "Uploaded", {
-      description: data.viewUrl,
-      duration: 12000,
-      action: {
-        label: "Copy",
-        onClick: () => {
-          navigator.clipboard.writeText(data.viewUrl).catch(() => {
-            toast.error("Could not copy to clipboard");
-          });
-        },
-      },
-      cancel: {
-        label: "View",
-        onClick: () => {
-          window.open(data.viewUrl, "_blank", "noopener,noreferrer");
-        },
-      },
-    });
+    const data = (await response.json()) as { viewUrl: string; slug: string };
 
     setContent("");
     setTitle("");
-    setTitleEdited(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     startTransition(() => {
-      router.refresh();
+      router.push(`/v/${data.slug}`);
     });
   }
 
   return (
-    <div className="space-y-4">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => {
-          setTitle(e.target.value);
-          setTitleEdited(true);
-        }}
-        placeholder="Title (optional — defaults to first heading)"
-        className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
-      />
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title (optional — defaults to first heading)"
+          className="block flex-1 rounded-md border border-border bg-paper-warm px-3.5 py-2.5 text-sm placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
+        />
+        <Watermark variant="operator" signOutAction={signOutAction} />
+      </div>
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`relative rounded-md border-2 border-dashed transition-colors ${
+        className={`relative rounded-md border-[1.5px] border-dashed transition-colors ${
           dragActive
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-            : "border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900"
+            ? "border-ochre"
+            : "border-border focus-within:border-ochre"
         }`}
       >
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Drop a .md file here, paste markdown, or type"
-          rows={12}
+          onChange={(e) => {
+            setContent(e.target.value);
+            if (error) setError(null);
+          }}
+          rows={10}
           spellCheck={false}
-          className="block w-full resize-y rounded-md bg-transparent px-3 py-2 font-mono text-sm placeholder:text-zinc-400 focus:outline-none dark:placeholder:text-zinc-500"
+          aria-label="Markdown content"
+          className="block w-full resize-y rounded-md bg-paper-warm px-3.5 py-3 font-mono text-sm focus:outline-none"
         />
+        {!content && (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center px-7">
+            <div className="text-center">
+              <div className="text-[1.25rem] font-bold tracking-[-0.02em]">
+                Drop or paste markdown here
+              </div>
+              <div className="mt-1.5 text-[0.8125rem] text-muted">
+                or click Choose file · 1MB cap
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+      {error && (
+        <p className="text-sm text-ochre" role="alert">
+          {error}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={submit}
           disabled={isPending || !content.trim()}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="cursor-pointer rounded-md bg-ink px-[18px] py-[9px] text-sm font-semibold text-paper transition-colors hover:bg-ochre-deep disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPending ? "Uploading…" : "Upload"}
+          {isPending ? "Publishing…" : "Publish"}
         </button>
         <input
           ref={fileInputRef}
@@ -181,7 +184,7 @@ export function UploadForm() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          className="cursor-pointer rounded-md border border-border px-[18px] py-[9px] text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-paper-warm"
         >
           Choose file
         </button>
