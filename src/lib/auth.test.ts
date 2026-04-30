@@ -35,6 +35,10 @@ function reqWith(headers: Record<string, string>): Request {
 beforeEach(() => {
   mocks.findActiveTokenByHash.mockReset();
   mocks.touchLastUsed.mockReset();
+  // Real `touchLastUsed` returns Promise<void>; default the mock so tests don't
+  // have to set this per-call. `requireAuth` calls `.catch()` on the return
+  // value, which would otherwise throw when the mock returns undefined.
+  mocks.touchLastUsed.mockResolvedValue(undefined);
   mocks.hashToken.mockClear();
   mocks.hashToken.mockImplementation((s: string) => `hash:${s}`);
   mocks.withAuth.mockReset();
@@ -51,7 +55,6 @@ describe("requireAuth — bearer path", () => {
       id: "tok-1",
       ownerId: "user-42",
     });
-    mocks.touchLastUsed.mockResolvedValueOnce(undefined);
 
     const result = await requireAuth(
       reqWith({ authorization: "Bearer mdk_secret" }),
@@ -111,7 +114,6 @@ describe("requireAuth — bearer path", () => {
         id: "tok-1",
         ownerId: "user-42",
       });
-      mocks.touchLastUsed.mockResolvedValueOnce(undefined);
       const result = await requireAuth(reqWith({ authorization: header }));
       expect(result.authenticated).toBe(true);
       expect(mocks.hashToken).toHaveBeenCalledWith("mdk_x");
