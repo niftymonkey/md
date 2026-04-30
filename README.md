@@ -24,6 +24,14 @@ Required env vars are listed in `.env.example`. Copy it to `.env.local` and fill
 
 ## API
 
+The bearer credential is a personal API token generated from `/settings` after signing in. Each token is shown only at creation; the server stores a sha256 hash. Lost tokens can be revoked and replaced but not recovered.
+
+Export your token in the shell:
+
+```bash
+export MD_API_KEY=mdk_...
+```
+
 Upload via curl:
 
 ```bash

@@ -166,6 +166,24 @@ describe("requireSessionAuth", () => {
     expect(mocks.withAuth).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "bearer mdk_lowercase",
+    "ApiKey foo",
+    "HMAC abc123",
+    "  Bearer with-leading-whitespace  ",
+  ])(
+    "rejects non-Bearer / oddly-cased Authorization headers (%s)",
+    async (header) => {
+      const result = await requireSessionAuth(reqWith({ authorization: header }));
+      expect(result).toEqual({
+        authenticated: false,
+        status: 401,
+        reason: "Session required for token management",
+      });
+      expect(mocks.withAuth).not.toHaveBeenCalled();
+    },
+  );
+
   it("authenticates an allow-listed signed-in user with email", async () => {
     mocks.withAuth.mockResolvedValueOnce({
       user: { id: "u-1", email: "ok@ex.com" },

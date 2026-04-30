@@ -15,13 +15,17 @@ In order:
 
 ## API surface
 
-All endpoints accept either `Authorization: Bearer $MD_API_KEY` or a valid WorkOS session cookie unless marked public. Auth handler: `src/lib/auth.ts` — bearer first, session fallback.
+All endpoints accept either `Authorization: Bearer <personal-token>` (created at `/settings`) or a valid WorkOS session cookie unless marked public. Tokens are stored as sha256 hashes in `api_tokens`; `requireAuth` (in `src/lib/auth.ts`) tries bearer first, then session. Token-management endpoints under `/api/tokens` are session-only — bearer is rejected to prevent token-spawn-from-leaked-token escalation.
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | `POST` | `/api/upload` | bearer or session | Raw `text/markdown` body or JSON `{content, title?}`. Title resolves: explicit → first H1 → "Untitled". 1 MB cap. |
 | `DELETE` | `/api/docs/[slug]` | bearer or session | 204 on success, 404 unknown. |
-| `GET` | `/api/list` | bearer or session | `?limit=` (max 100), `?cursor=`, `?search=`. Returns `{docs, nextCursor}`, owner-scoped. |
+| `PATCH` | `/api/docs/[slug]` | bearer or session | Partial update of `content`, `title`, `kind`. |
+| `GET` | `/api/list` | bearer or session | `?limit=` (max 100), `?cursor=`, `?search=`, `?kind=`. Returns `{docs, nextCursor}`, owner-scoped. |
+| `POST` | `/api/tokens` | session only | `{name}`. Returns plaintext token once. |
+| `GET` | `/api/tokens` | session only | Lists active tokens (no plaintext). |
+| `DELETE` | `/api/tokens/[id]` | session only | Sets `revoked_at` on the row. |
 | `GET` | `/api/raw/[slug]` | public | `text/markdown` by default; JSON if `Accept: application/json`. |
 | `GET` | `/v/[slug]` | public | Server-rendered page with OG metadata + `noindex, nofollow`. |
 

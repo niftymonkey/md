@@ -27,7 +27,9 @@ export async function requireAuth(req: Request): Promise<AuthResult> {
     if (!match) {
       return { authenticated: false, status: 401, reason: "Invalid API key" };
     }
-    void touchLastUsed(match.id).catch(() => {});
+    void touchLastUsed(match.id).catch((err) => {
+      console.warn("[auth] failed to update last_used_at", err);
+    });
     return { authenticated: true, ownerId: match.ownerId, via: "bearer" };
   }
 
@@ -37,7 +39,10 @@ export async function requireAuth(req: Request): Promise<AuthResult> {
 export async function requireSessionAuth(
   req: Request,
 ): Promise<SessionAuthResult> {
-  if (req.headers.get("authorization")?.startsWith("Bearer ")) {
+  // Reject any Authorization header — token-management is session-only by design.
+  // Stricter than `startsWith("Bearer ")` so future auth schemes (HMAC, ApiKey, etc.)
+  // can't silently bypass this check, and so case variants like `bearer foo` are caught.
+  if ((req.headers.get("authorization") ?? "").trim().length > 0) {
     return {
       authenticated: false,
       status: 401,
