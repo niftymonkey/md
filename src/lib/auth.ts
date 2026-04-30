@@ -14,11 +14,17 @@ export type SessionAuthResult =
   | { authenticated: true; ownerId: string; email: string }
   | { authenticated: false; status: 401 | 403; reason: string };
 
+// RFC 7235 §2.1 — auth-scheme tokens are case-insensitive. The captured group
+// may be empty (e.g. "Bearer " with trailing whitespace and no token), in
+// which case the empty-bearer branch below fires.
+const BEARER_RE = /^Bearer(?:\s+(.*))?$/i;
+
 export async function requireAuth(req: Request): Promise<AuthResult> {
   const authHeader = req.headers.get("authorization");
+  const bearerMatch = authHeader?.match(BEARER_RE);
 
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice("Bearer ".length).trim();
+  if (bearerMatch) {
+    const token = (bearerMatch[1] ?? "").trim();
     if (!token) {
       return { authenticated: false, status: 401, reason: "Empty bearer token" };
     }

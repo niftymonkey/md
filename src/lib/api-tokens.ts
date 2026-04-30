@@ -77,7 +77,11 @@ export async function findActiveTokenByHash(
 }
 
 export async function touchLastUsed(id: string): Promise<void> {
-  await sql`UPDATE api_tokens SET last_used_at = now() WHERE id = ${id}`;
+  await sql`
+    UPDATE api_tokens
+    SET last_used_at = now()
+    WHERE id = ${id} AND revoked_at IS NULL
+  `;
 }
 
 export async function createApiToken(

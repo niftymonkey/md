@@ -103,6 +103,20 @@ describe("requireAuth — bearer path", () => {
     });
     expect(mocks.findActiveTokenByHash).not.toHaveBeenCalled();
   });
+
+  it.each(["Bearer mdk_x", "bearer mdk_x", "BEARER mdk_x", "bEaReR mdk_x"])(
+    "accepts case-insensitive Bearer scheme per RFC 7235 (%s)",
+    async (header) => {
+      mocks.findActiveTokenByHash.mockResolvedValueOnce({
+        id: "tok-1",
+        ownerId: "user-42",
+      });
+      mocks.touchLastUsed.mockResolvedValueOnce(undefined);
+      const result = await requireAuth(reqWith({ authorization: header }));
+      expect(result.authenticated).toBe(true);
+      expect(mocks.hashToken).toHaveBeenCalledWith("mdk_x");
+    },
+  );
 });
 
 describe("requireAuth — session path", () => {

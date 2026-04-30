@@ -2,7 +2,7 @@
 
 Reference for what behavior to cover when automated tests come online. Each scenario was verified manually via curl against a local dev server during the PR that introduced it; capture them here so we don't regress on them silently.
 
-Until there's a test runner, the curl recipes below are runnable as-is against `http://localhost:3000`. Generate a personal API token at `/settings` and export it as `MD_API_KEY=mdk_...` for the bearer-flow recipes. The local DB is the shared Neon DB until #8 separates environments — be mindful of test data and clean up after yourself.
+Vitest covers the auth + token data layer (`pnpm test`); higher-level scenarios still rely on manual curl recipes runnable as-is against `http://localhost:3000`. Generate a personal API token at `/settings` and export it as `MD_API_KEY=mdk_...` for the bearer-flow recipes. The local DB is the shared Neon DB until #8 separates environments — be mindful of test data and clean up after yourself.
 
 For ownership scenarios that need a doc owned by a *different* user, insert directly via `@vercel/postgres` from a tsx script (one-off, not committed). Example shape:
 
