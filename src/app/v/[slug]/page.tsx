@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
+import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReaderShell } from "@/components/reader-shell";
 import { parseHeadings } from "@/lib/heading-utils";
+
+async function signOutAction() {
+  "use server";
+  await signOut();
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -54,11 +61,16 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
   const headings = parseHeadings(doc.content);
   const hasOutline = headings.filter((h) => h.level === 2).length >= 3;
 
+  const { user } = await withAuth();
+  const isOperator = !!user && isEmailAllowed(user.email);
+
   return (
     <ReaderShell
       rawHref={`/api/raw/${doc.slug}`}
       hasOutline={hasOutline}
       headings={headings}
+      dashboardHref={isOperator ? "/" : undefined}
+      signOutAction={isOperator ? signOutAction : undefined}
     >
       <MarkdownRenderer content={doc.content} />
     </ReaderShell>

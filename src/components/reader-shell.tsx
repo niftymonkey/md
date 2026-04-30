@@ -14,11 +14,15 @@ export function ReaderShell({
   rawHref,
   hasOutline,
   headings,
+  dashboardHref,
+  signOutAction,
   children,
 }: {
   rawHref: string;
   hasOutline: boolean;
   headings: Heading[];
+  dashboardHref?: string;
+  signOutAction?: () => Promise<void>;
   children: ReactNode;
 }) {
   const [width, setWidth] = useState<Width>("reading");
@@ -99,6 +103,8 @@ export function ReaderShell({
               rawHref={rawHref}
               width={width}
               onWidthChange={pickWidth}
+              dashboardHref={dashboardHref}
+              signOutAction={signOutAction}
             />
           </div>
         ) : (
@@ -108,6 +114,8 @@ export function ReaderShell({
               rawHref={rawHref}
               width={width}
               onWidthChange={pickWidth}
+              dashboardHref={dashboardHref}
+              signOutAction={signOutAction}
             />
           </div>
         )}
@@ -137,6 +145,8 @@ export function ReaderShell({
                 rawHref={rawHref}
                 width={width}
                 onWidthChange={pickWidth}
+                dashboardHref={dashboardHref}
+                signOutAction={signOutAction}
               />
             </div>
           </div>

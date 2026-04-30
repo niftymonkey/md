@@ -144,13 +144,36 @@ button:not(:disabled),
 }
 
 .watermark-glyph:hover .watermark-underline,
-.watermark-glyph:focus-visible .watermark-underline {
+.watermark-glyph:focus-visible .watermark-underline,
+.watermark-glyph[data-pulse="true"] .watermark-underline {
   transform: scaleX(1);
+}
+
+@keyframes saved-pulse {
+  0% {
+    color: var(--ochre-deep);
+    transform: translateY(-1px);
+  }
+  60% {
+    color: var(--ochre-deep);
+    transform: translateY(0);
+  }
+  100% {
+    color: var(--ochre);
+    transform: translateY(0);
+  }
+}
+
+.saved-pulse {
+  animation: saved-pulse 700ms cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .watermark-underline {
     transition: none;
+  }
+  .saved-pulse {
+    animation: none;
   }
 }
 

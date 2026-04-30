@@ -15,21 +15,39 @@ type Variant = "reader" | "operator" | "editor" | "settings";
 
 type Width = "reading" | "wide";
 
+type Size = "md" | "lg";
+
+const SIZE_CLASSES: Record<Size, { button: string; glyph: string }> = {
+  md: { button: "size-8", glyph: "size-4" },
+  lg: { button: "size-11", glyph: "size-5" },
+};
+
 type WatermarkProps = {
   variant: Variant;
+  size?: Size;
   rawHref?: string;
   width?: Width;
   onWidthChange?: (next: Width) => void;
   signOutAction?: () => Promise<void>;
+  dashboardHref?: string;
+  onSave?: () => void;
+  onCancel?: () => void;
+  pulse?: boolean;
 };
 
 export function Watermark({
   variant,
+  size = "md",
   rawHref,
   width,
   onWidthChange,
   signOutAction,
+  dashboardHref,
+  onSave,
+  onCancel,
+  pulse,
 }: WatermarkProps) {
+  const sizeClass = SIZE_CLASSES[size];
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,10 +76,13 @@ export function Watermark({
         aria-label="md.niftymonkey.dev menu"
         title="md.niftymonkey.dev menu"
         aria-expanded={open}
+        data-pulse={pulse ? "true" : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="watermark-glyph relative grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-ochre transition-[border-color] duration-200 hover:border-ochre"
+        className={`watermark-glyph relative grid ${sizeClass.button} cursor-pointer place-items-center rounded-md border bg-paper text-ochre transition-[border-color] duration-200 hover:border-ochre ${
+          pulse ? "border-ochre" : "border-border"
+        }`}
       >
-        <MdGlyph />
+        <MdGlyph className={sizeClass.glyph} />
         <span className="watermark-underline pointer-events-none absolute -bottom-[7px] left-0 h-[2px] w-full bg-ochre" />
       </button>
       {open && (
@@ -71,6 +92,10 @@ export function Watermark({
           width={width}
           onWidthChange={onWidthChange}
           signOutAction={signOutAction}
+          dashboardHref={dashboardHref}
+          onSave={onSave}
+          onCancel={onCancel}
+          closeMenu={() => setOpen(false)}
         />
       )}
     </div>
@@ -83,7 +108,15 @@ function Menu({
   width,
   onWidthChange,
   signOutAction,
-}: WatermarkProps) {
+  dashboardHref,
+  onSave,
+  onCancel,
+  closeMenu,
+}: WatermarkProps & { closeMenu: () => void }) {
+  const hasOperatorExtras =
+    (variant === "reader" || variant === "editor") &&
+    (dashboardHref || signOutAction);
+
   return (
     <div
       role="menu"
@@ -93,11 +126,32 @@ function Menu({
         <ReaderRows rawHref={rawHref} width={width} onWidthChange={onWidthChange} />
       )}
       {variant === "operator" && <OperatorRows signOutAction={signOutAction} />}
-      {variant === "editor" && <EditorRows />}
+      {variant === "editor" && (
+        <EditorRows
+          rawHref={rawHref}
+          onSave={onSave}
+          onCancel={onCancel}
+          closeMenu={closeMenu}
+        />
+      )}
       {variant === "settings" && <SettingsRows />}
-      <Group>
-        <RowLabel>md.niftymonkey.dev</RowLabel>
-      </Group>
+      {hasOperatorExtras && (
+        <Group>
+          {dashboardHref && (
+            <RowLink href={dashboardHref} icon={<BackIcon />}>
+              dashboard
+            </RowLink>
+          )}
+          {signOutAction && (
+            <RowButton
+              onClick={() => void signOutAction()}
+              icon={<SignOutIcon />}
+            >
+              sign out
+            </RowButton>
+          )}
+        </Group>
+      )}
     </div>
   );
 }
@@ -218,15 +272,44 @@ function RowSoon({
   );
 }
 
-function EditorRows() {
+function EditorRows({
+  rawHref,
+  onSave,
+  onCancel,
+  closeMenu,
+}: {
+  rawHref?: string;
+  onSave?: () => void;
+  onCancel?: () => void;
+  closeMenu: () => void;
+}) {
   return (
     <Group label="editing">
-      <RowButton kbd={["mod", "S"]} icon={<SaveIcon />}>
+      <RowButton
+        kbd={["mod", "S"]}
+        icon={<SaveIcon />}
+        onClick={() => {
+          closeMenu();
+          onSave?.();
+        }}
+      >
         save
       </RowButton>
-      <RowButton kbd={["Esc"]} icon={<CancelIcon />}>
+      <RowButton
+        kbd={["Esc"]}
+        icon={<CancelIcon />}
+        onClick={() => {
+          closeMenu();
+          onCancel?.();
+        }}
+      >
         cancel
       </RowButton>
+      {rawHref && (
+        <RowLink href={rawHref} icon={<RawIcon />}>
+          view raw
+        </RowLink>
+      )}
     </Group>
   );
 }
@@ -377,7 +460,7 @@ function Kbd({ keys }: { keys: string[] }) {
   );
 }
 
-function MdGlyph() {
+function MdGlyph({ className }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -387,7 +470,7 @@ function MdGlyph() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="size-4"
+      className={className ?? "size-4"}
       aria-hidden="true"
     >
       <path d="M3 19V5l5 7 5-7v14" />
