@@ -2,7 +2,7 @@
 
 Reference for what behavior to cover when automated tests come online. Each scenario was verified manually via curl against a local dev server during the PR that introduced it; capture them here so we don't regress on them silently.
 
-Until there's a test runner, the curl recipes below are runnable as-is against `http://localhost:3000` with `MD_API_KEY` and `MD_API_OWNER_ID` set. The local DB is the shared Neon DB until #8 separates environments — be mindful of test data and clean up after yourself.
+Vitest covers the auth + token data layer (`pnpm test`); higher-level scenarios still rely on manual curl recipes runnable as-is against `http://localhost:3000`. Generate a personal API token at `/settings` and export it as `MD_API_KEY=mdk_...` for the bearer-flow recipes. The local DB is the shared Neon DB until #8 separates environments — be mindful of test data and clean up after yourself.
 
 For ownership scenarios that need a doc owned by a *different* user, insert directly via `@vercel/postgres` from a tsx script (one-off, not committed). Example shape:
 
@@ -29,7 +29,7 @@ Cleanup that row afterward — non-owner DELETE from the API will (correctly) re
 - Title resolves: explicit override → first H1 → `"Untitled"`
 - `X-Title` header honors ASCII titles; UTF-8 (em-dash, accents, emoji) round-trips correctly only via JSON body
 - `X-Kind` header normalizes (trim + lowercase) just like JSON body
-- Bearer-uploaded docs land under `MD_API_OWNER_ID`; session-uploaded docs land under `user.id`
+- Bearer-uploaded docs land under the `owner_id` of the token's row; session-uploaded docs land under `user.id` (typically the same value for an operator with one token)
 
 ## Edit (`PATCH /api/docs/[slug]`)
 
@@ -93,5 +93,6 @@ Cleanup that row afterward — non-owner DELETE from the API will (correctly) re
 ## Cross-cutting
 
 - Bearer and session auth paths both use `requireAuth` and produce the same `auth.ownerId`
-- Bearer flow: `MD_API_KEY` and `MD_API_OWNER_ID` are trimmed at read-time (defense against trailing newlines from `echo "..." | vercel env add`)
+- Bearer flow: a sha256 hash of the incoming token is looked up in `api_tokens`; revoked rows (`revoked_at IS NOT NULL`) reject as 401
+- Token-management endpoints (`/api/tokens*`) are session-only and reject any non-empty `Authorization` header
 - Public endpoints (`/v/<slug>`, `/api/raw/<slug>`) intentionally remain unscoped — shareable URLs are the point
