@@ -247,7 +247,9 @@ function OperatorRows({
         <RowSoon icon={<CommandIcon />} kbd={["mod", "K"]}>
           command palette
         </RowSoon>
-        <RowSoon icon={<SettingsIcon />}>settings</RowSoon>
+        <RowLink href="/settings" icon={<SettingsIcon />}>
+          settings
+        </RowLink>
         <RowSoon icon={<ListIcon />}>all docs</RowSoon>
       </Group>
       {signOutAction && (

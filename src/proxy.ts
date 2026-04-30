@@ -7,8 +7,11 @@ export const config = {
     "/",
     "/v/:slug*",
     "/edit/:slug*",
+    "/settings",
     "/api/upload",
     "/api/docs/:slug*",
     "/api/list",
+    "/api/tokens",
+    "/api/tokens/:id*",
   ],
 };
