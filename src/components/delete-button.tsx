@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 export function DeleteButton({ slug, title }: { slug: string; title: string }) {
   const [isPending, startTransition] = useTransition();
@@ -24,15 +23,14 @@ export function DeleteButton({ slug, title }: { slug: string; title: string }) {
         } catch {
           // ignore parse failure
         }
-        toast.error(message);
+        window.alert(message);
         return;
       }
-      toast.success("Deleted");
       startTransition(() => {
         router.refresh();
       });
     } catch {
-      toast.error("Network error");
+      window.alert("Network error");
     } finally {
       setBusy(false);
     }
@@ -44,7 +42,8 @@ export function DeleteButton({ slug, title }: { slug: string; title: string }) {
       onClick={onClick}
       disabled={busy || isPending}
       aria-label={`Delete ${title}`}
-      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 disabled:opacity-50 dark:hover:bg-zinc-800"
+      title={`Delete ${title}`}
+      className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-paper hover:text-ochre disabled:opacity-50"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

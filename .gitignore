@@ -40,6 +40,10 @@ yarn-error.log*
 # operator-only Claude context (gitignored — stays on the operator's machine)
 CLAUDE.local.md
 
+# impeccable skill files (re-pull from upstream; PRODUCT.md and DESIGN.md stay tracked)
+/.claude/skills/impeccable/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.playwright-mcp/

@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>md · year-one vision · all features integrated</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="light"] {
+  --bone: oklch(95% 0.008 145);
+  --bone-warm: oklch(92% 0.012 140);
+  --bone-deep: oklch(88% 0.014 142);
+  --ink: oklch(24% 0.014 240);
+  --border: oklch(85% 0.012 140);
+  --muted: oklch(48% 0.018 200);
+  --teal: oklch(64% 0.14 85);
+  --teal-deep: oklch(54% 0.16 80);
+  --canvas: oklch(88% 0.012 145);
+  --selection: oklch(64% 0.14 85 / 0.22);
+  --shadow-soft: 0 4px 24px oklch(20% 0.014 240 / 0.10);
+  --sh-fg: oklch(22% 0.012 280);
+  --sh-keyword: oklch(54% 0.20 25);
+  --sh-type: oklch(48% 0.14 50);
+  --sh-function: oklch(52% 0.18 295);
+  --sh-string: oklch(32% 0.13 250);
+  --sh-number: oklch(46% 0.15 250);
+  --sh-property: oklch(36% 0.10 250);
+  --sh-comment: oklch(56% 0.012 250);
+  --sh-punctuation: oklch(40% 0.012 280);
+}
+:root[data-theme="dark"] {
+  --bone: oklch(19% 0.014 220);
+  --bone-warm: oklch(23% 0.014 220);
+  --bone-deep: oklch(26% 0.014 220);
+  --ink: oklch(92% 0.012 100);
+  --border: oklch(32% 0.014 220);
+  --muted: oklch(64% 0.018 110);
+  --teal: oklch(76% 0.14 85);
+  --teal-deep: oklch(82% 0.13 80);
+  --canvas: oklch(13% 0.014 220);
+  --selection: oklch(76% 0.14 85 / 0.24);
+  --shadow-soft: 0 4px 24px oklch(0% 0 0 / 0.4);
+  --sh-fg: oklch(92% 0.008 240);
+  --sh-keyword: oklch(70% 0.18 25);
+  --sh-type: oklch(76% 0.14 60);
+  --sh-function: oklch(78% 0.13 295);
+  --sh-string: oklch(82% 0.10 240);
+  --sh-number: oklch(76% 0.13 240);
+  --sh-property: oklch(70% 0.08 240);
+  --sh-comment: oklch(64% 0.012 240);
+  --sh-punctuation: oklch(82% 0.008 240);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--canvas); color: var(--ink); font-family: 'Inter Tight', system-ui, sans-serif; -webkit-font-smoothing: antialiased; transition: background 200ms cubic-bezier(0.25,1,0.5,1), color 200ms cubic-bezier(0.25,1,0.5,1); }
+body { padding: 32px 0 120px; }
+::selection { background: var(--selection); }
+
+.xnav { position: sticky; top: 0; z-index: 90; background: var(--canvas); border-bottom: 1px solid var(--border); padding: 10px 28px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.8125rem; }
+.xnav__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-right: 8px; }
+.xnav a { color: var(--ink); text-decoration: none; font-weight: 500; padding: 4px 10px; border-radius: 4px; }
+.xnav a:hover { background: var(--bone-warm); }
+.xnav a.is-current { background: var(--bone); border: 1px solid var(--border); }
+.toggle { position: fixed; top: 12px; left: 20px; z-index: 100; background: var(--bone); color: var(--ink); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.toggle:hover { background: var(--bone-warm); }
+
+.intro { max-width: 1080px; margin: 24px auto 40px; padding: 0 36px; }
+.intro__eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; }
+.intro__h1 { font-weight: 700; font-size: clamp(2rem, 1.5rem + 1.5vw, 2.625rem); line-height: 1.12; letter-spacing: -0.025em; margin-bottom: 16px; }
+.intro__p { font-size: 1.0625rem; line-height: 1.6; color: var(--muted); }
+
+.surface { max-width: 1080px; margin: 0 auto 56px; padding: 0 36px; }
+.surface--narrow { max-width: 720px; }
+.surface__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.surface__label .feat { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; font-weight: 500; letter-spacing: 0.06em; color: var(--teal); text-transform: uppercase; }
+.surface__sub { font-size: 0.875rem; color: var(--muted); margin-top: -8px; margin-bottom: 16px; line-height: 1.55; font-style: italic; }
+
+/* ==================== UNFURL with og:image ==================== */
+.chat { max-width: 540px; background: var(--bone); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.chat__msg { display: flex; gap: 12px; margin-bottom: 12px; }
+.chat__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bone-warm); border: 1px solid var(--border); flex-shrink: 0; }
+.chat__msg-body { font-size: 0.875rem; line-height: 1.5; color: var(--ink); }
+.chat__name { font-weight: 600; margin-bottom: 4px; }
+.chat__link { color: var(--muted); }
+.unfurl { margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; max-width: 480px; }
+.og-image { background: var(--bone); padding: 28px; border-bottom: 1px solid var(--border); position: relative; }
+.og-image__top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.og-image__mast { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); }
+.og-image__glyph { width: 28px; height: 28px; border-radius: 5px; border: 1px solid var(--border); background: var(--bone-warm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.og-image__glyph svg { width: 14px; height: 14px; color: var(--teal); }
+.og-image__title { font-weight: 700; font-size: 1.625rem; line-height: 1.12; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 14px; max-width: 24ch; }
+.og-image__date { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: var(--muted); letter-spacing: 0.04em; }
+.unfurl__body { padding: 12px 16px; }
+.unfurl__url { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: var(--muted); margin-bottom: 4px; }
+.unfurl__title { font-size: 0.9375rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.01em; }
+.unfurl__desc { font-size: 0.8125rem; color: var(--muted); line-height: 1.5; }
+
+/* ==================== READER (with outline + width-toggle) ==================== */
+.reader-page { background: var(--bone); border: 1px solid var(--border); border-radius: 6px; padding: 56px clamp(40px, 6vw, 72px); position: relative; }
+.reader-grid { display: grid; grid-template-columns: 1fr 240px; gap: 56px; }
+.reader { min-width: 0; }
+.reader h1 { font-weight: 700; font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem); line-height: 1.12; letter-spacing: -0.025em; margin-bottom: 32px; max-width: 22ch; color: var(--ink); }
+.reader p { font-size: 1.0625rem; line-height: 1.65; max-width: 64ch; margin-bottom: 18px; }
+.reader h2 { font-weight: 600; font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.015em; margin: 36px 0 14px; max-width: 28ch; }
+.reader h3 { font-weight: 600; font-size: 1.125rem; line-height: 1.2; margin: 24px 0 10px; }
+.reader ul { padding-left: 1.25rem; margin-bottom: 18px; max-width: 64ch; }
+.reader li { font-size: 1.0625rem; line-height: 1.65; margin-bottom: 6px; }
+.reader li::marker { color: var(--teal); }
+.reader code { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; background: var(--bone-warm); padding: 1px 6px; border-radius: 3px; color: var(--teal); }
+.reader pre { margin: 24px 0; padding: 16px 20px; background: var(--bone-warm); border-left: 2px solid var(--teal); border-radius: 0 4px 4px 0; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; line-height: 1.6; color: var(--sh-fg); }
+.reader pre .sh-kw { color: var(--sh-keyword); } .reader pre .sh-ty { color: var(--sh-type); } .reader pre .sh-fn { color: var(--sh-function); } .reader pre .sh-str { color: var(--sh-string); } .reader pre .sh-num { color: var(--sh-number); } .reader pre .sh-prop { color: var(--sh-property); } .reader pre .sh-com { color: var(--sh-comment); font-style: italic; } .reader pre .sh-pn { color: var(--sh-punctuation); }
+
+/* OUTLINE PANEL */
+.outline { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; padding-top: 8px; /* aligns top with H1 cap-height (compensates for H1 line-height padding) */ }
+.outline__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.outline__title { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0; padding: 0; line-height: 32px; /* matches button height; centers text vertically with button caps */ }
+.outline__list, .outline__list ol { list-style: none; padding: 0; margin: 0; }
+.outline__list a { display: block; padding: 6px 4px 6px 16px; font-size: 0.8125rem; line-height: 1.4; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 120ms cubic-bezier(0.25,1,0.5,1); position: relative; border-radius: 3px; }
+.outline__list a:hover { color: var(--ink); background: var(--bone-warm); }
+.outline__list a.is-current { color: var(--teal); font-weight: 600; }
+.outline__list a.is-current::before { content: ""; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--teal); }
+.outline__list ol { margin-top: 2px; margin-bottom: 4px; }
+.outline__list ol a { padding-left: 28px; font-size: 0.75rem; font-weight: 400; }
+.outline__list ol a.is-current::before { left: 16px; width: 3px; height: 3px; }
+
+/* WATERMARK with full reader-mode tooltip — top-right desktop placement.
+   Per-surface `top` overrides align the glyph with each surface's topmost element. */
+.watermark { position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; border-radius: 6px; background: var(--bone); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 220ms cubic-bezier(0.25,1,0.5,1); z-index: 5; overflow: visible; }
+.edit > .watermark { top: 18px; right: 18px; }              /* aligns with edit__head row */
+.settings > .watermark { top: 32px; right: clamp(28px, 5vw, 56px); }  /* right edge aligns with content edge */
+
+/* Reader toolbar — outline toggle + watermark, lives INSIDE the outline panel head row */
+.reader-toolbar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.reader-toolbar .watermark { position: relative; top: auto; right: auto; }
+.toolbar-btn { width: 32px; height: 32px; border-radius: 6px; background: var(--bone); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 220ms cubic-bezier(0.25,1,0.5,1), background 220ms cubic-bezier(0.25,1,0.5,1); }
+.toolbar-btn:hover { border-color: var(--teal); background: var(--bone-warm); }
+.toolbar-btn svg { width: 16px; height: 16px; color: var(--muted); transition: color 220ms cubic-bezier(0.25,1,0.5,1); }
+.toolbar-btn:hover svg { color: var(--teal); }
+.toolbar-btn.is-active { background: var(--teal); border-color: var(--teal); }
+.toolbar-btn.is-active svg { color: var(--bone); }
+
+/* Floating "show outline" button — only visible when outline is hidden */
+.reader-show-outline { position: absolute; top: 64px; right: clamp(16px, 2vw, 24px); width: 32px; height: 32px; border-radius: 6px; background: var(--bone); border: 1px solid var(--border); display: none; align-items: center; justify-content: center; cursor: pointer; transition: border-color 220ms cubic-bezier(0.25,1,0.5,1), background 220ms cubic-bezier(0.25,1,0.5,1); z-index: 5; }
+.reader-show-outline:hover { border-color: var(--teal); background: var(--bone-warm); }
+.reader-show-outline svg { width: 16px; height: 16px; color: var(--muted); transition: color 220ms; }
+.reader-show-outline:hover svg { color: var(--teal); }
+
+/* Outline-hidden state — outline column collapses, article fills, floating btn appears */
+.reader-page.is-outline-hidden .reader-grid { grid-template-columns: minmax(0, 1fr); }
+.reader-page.is-outline-hidden .outline { display: none; }
+.reader-page.is-outline-hidden .reader-show-outline { display: flex; }
+.reader-page.is-outline-hidden .reader { max-width: 80ch; margin: 0 auto; }
+.watermark::after { content: ""; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); width: 0; height: 2px; background: var(--teal); transition: width 280ms cubic-bezier(0.25,1,0.5,1); }
+.watermark:hover, .watermark.is-open { border-color: var(--teal); }
+.watermark:hover::after, .watermark.is-open::after { width: 100%; }
+.watermark svg { width: 16px; height: 16px; color: var(--teal); }
+.wm-tooltip { position: absolute; top: 44px; right: 0; background: var(--bone); border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-width: 280px; box-shadow: var(--shadow-soft); display: none; z-index: 10; }
+.watermark.is-open .wm-tooltip { display: block; }
+.wm-tooltip__group { padding: 6px 4px 4px; }
+.wm-tooltip__group + .wm-tooltip__group { border-top: 1px solid var(--border); margin-top: 4px; }
+.wm-tooltip__group-h { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 4px 8px 6px; }
+.wm-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 8px; font-size: 0.875rem; color: var(--ink); cursor: pointer; border-radius: 4px; }
+.wm-row:hover { background: var(--bone-warm); }
+.wm-row .label { display: flex; align-items: center; gap: 8px; }
+.wm-row .icon { color: var(--muted); width: 14px; }
+.wm-row .kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: var(--muted); padding: 1px 5px; border: 1px solid var(--border); border-radius: 3px; }
+.wm-row .toggle-pill { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.wm-row .toggle-pill button { background: transparent; border: none; padding: 3px 10px; font-family: 'Inter Tight', sans-serif; font-size: 0.6875rem; font-weight: 500; color: var(--muted); cursor: pointer; }
+.wm-row .toggle-pill button.is-active { background: var(--teal); color: var(--bone); font-weight: 600; }
+.wm-row .switch { width: 26px; height: 14px; border-radius: 999px; background: var(--teal); position: relative; transition: background 200ms; }
+.wm-row .switch::after { content: ""; position: absolute; top: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; background: var(--bone); transition: all 200ms cubic-bezier(0.25,1,0.5,1); }
+.wm-row .switch.is-off { background: var(--border); }
+.wm-row .switch.is-off::after { right: auto; left: 1px; }
+
+/* ==================== READER MOBILE ==================== */
+.phone { max-width: 380px; margin: 0 auto; background: var(--bone); border: 1px solid var(--border); border-radius: 24px; padding: 12px; box-shadow: var(--shadow-soft); position: relative; }
+.phone__inner { background: var(--bone); border-radius: 16px; padding: 28px 22px; min-height: 600px; position: relative; }
+.phone__inner h1 { font-weight: 700; font-size: 1.625rem; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 18px; }
+.phone__inner p { font-size: 1rem; line-height: 1.6; margin-bottom: 14px; color: var(--ink); }
+.phone__watermark { position: absolute; bottom: 24px; left: 24px; width: 36px; height: 36px; border-radius: 6px; background: var(--bone-warm); border: 1px solid var(--teal); display: flex; align-items: center; justify-content: center; }
+.phone__watermark svg { width: 18px; height: 18px; color: var(--teal); }
+
+/* ==================== OPERATOR (with search + tag filter) ==================== */
+.op { background: var(--bone); border: 1px solid var(--border); border-radius: 6px; padding: 24px 28px; min-height: 520px; position: relative; }
+.op__topbar { display: flex; align-items: stretch; gap: 10px; margin-bottom: 16px; }
+.op__topbar .op__search { flex: 1; margin: 0; }
+.op__topbar .watermark { position: relative; top: auto; right: auto; align-self: center; }
+.op__search { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bone-warm); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; cursor: text; }
+.op__search-icon { color: var(--muted); }
+.op__search-input { flex: 1; background: transparent; border: none; outline: none; font-family: 'Inter Tight', sans-serif; font-size: 0.9375rem; color: var(--ink); }
+.op__search-input::placeholder { color: var(--muted); opacity: 0.7; }
+.op__search-kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); }
+.op__filters { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+.op__filter-label { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.op__chip { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 500; color: var(--muted); cursor: pointer; }
+.op__chip.is-active { background: var(--teal); color: var(--bone); border-color: var(--teal); font-weight: 600; }
+.op__chip:hover:not(.is-active) { color: var(--ink); border-color: var(--muted); }
+.op__dropzone { border: 1.5px dashed var(--border); border-radius: 6px; padding: 36px 28px; text-align: center; cursor: pointer; margin-bottom: 18px; }
+.op__dropzone:hover { border-color: var(--teal); }
+.op__hint { font-weight: 700; font-size: 1.25rem; margin-bottom: 6px; letter-spacing: -0.02em; }
+.op__hint-sub { font-size: 0.8125rem; color: var(--muted); }
+.op__recent-h { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; }
+.op__row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; padding: 11px 14px; background: var(--bone-warm); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; align-items: center; }
+.op__row .title { font-weight: 600; font-size: 0.9375rem; }
+.op__row .tags { display: flex; gap: 4px; }
+.op__row .tag { background: transparent; color: var(--teal); border: 1px solid var(--teal); border-radius: 3px; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.04em; padding: 1px 5px; }
+.op__row .date { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+/* ==================== CMD-PALETTE ==================== */
+.palette-frame { background: var(--bone-deep); border: 1px solid var(--border); border-radius: 8px; padding: 80px 24px; min-height: 480px; position: relative; }
+.palette-overlay { position: absolute; inset: 0; background: oklch(0% 0 0 / 0.45); border-radius: 8px; display: flex; align-items: flex-start; justify-content: center; padding-top: 56px; }
+:root[data-theme="dark"] .palette-overlay { background: oklch(0% 0 0 / 0.6); }
+.palette { width: min(560px, calc(100% - 48px)); background: var(--bone); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-soft); overflow: hidden; }
+.palette__search { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.palette__search-icon { color: var(--muted); flex-shrink: 0; }
+.palette__search-input { flex: 1; background: transparent; border: none; outline: none; font-family: 'Inter Tight', sans-serif; font-size: 1rem; color: var(--ink); }
+.palette__group { padding: 8px 0; border-top: 1px solid var(--border); }
+.palette__group:first-of-type { border-top: none; }
+.palette__group-h { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 6px 18px 4px; display: flex; justify-content: space-between; }
+.palette__group-h .count { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--teal); letter-spacing: 0.02em; text-transform: none; }
+.palette__row { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; padding: 9px 18px; cursor: pointer; align-items: center; }
+.palette__row.is-selected { background: var(--bone-warm); }
+.palette__row.is-selected::before { content: ""; position: absolute; left: 0; width: 3px; height: 28px; background: var(--teal); border-radius: 0 2px 2px 0; }
+.palette__row .icon { color: var(--muted); display: flex; justify-content: center; }
+.palette__row.is-selected .icon { color: var(--teal); }
+.palette__row .title { font-size: 0.9375rem; color: var(--ink); font-weight: 500; }
+.palette__row .meta { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: var(--muted); }
+.palette__row .kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; padding: 2px 6px; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); }
+.palette__footer { padding: 8px 18px; border-top: 1px solid var(--border); background: var(--bone-warm); display: flex; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: var(--muted); }
+.palette__footer .kbd { color: var(--ink); }
+
+/* ==================== SETTINGS ==================== */
+.settings { background: var(--bone); border: 1px solid var(--border); border-radius: 6px; padding: 32px clamp(28px, 5vw, 56px); min-height: 540px; position: relative; }
+.settings__h1 { font-weight: 700; font-size: 1.875rem; line-height: 1.1; letter-spacing: -0.025em; margin-bottom: 6px; }
+.settings__sub { font-size: 0.9375rem; color: var(--muted); margin-bottom: 32px; }
+.settings__section { margin-bottom: 32px; }
+.settings__section-h { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--teal); }
+.setting-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; padding: 14px 0; border-bottom: 1px dotted var(--border); align-items: center; }
+.setting-row:last-child { border-bottom: none; }
+.setting-row__label { font-weight: 600; font-size: 0.9375rem; margin-bottom: 4px; color: var(--ink); }
+.setting-row__desc { font-size: 0.8125rem; color: var(--muted); line-height: 1.5; max-width: 56ch; }
+.setting-pill { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.setting-pill button { background: transparent; border: none; padding: 5px 14px; font-family: 'Inter Tight', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted); cursor: pointer; }
+.setting-pill button.is-active { background: var(--teal); color: var(--bone); font-weight: 600; }
+.setting-switch { width: 36px; height: 20px; border-radius: 999px; background: var(--teal); position: relative; cursor: pointer; transition: background 200ms; flex-shrink: 0; }
+.setting-switch::after { content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--bone); box-shadow: 0 1px 2px oklch(0% 0 0 / 0.2); transition: all 200ms cubic-bezier(0.25,1,0.5,1); }
+.setting-switch.is-off { background: var(--border); }
+.setting-switch.is-off::after { right: auto; left: 2px; }
+.token-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 12px; }
+.token-table th { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.token-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.token-table .name { font-weight: 600; }
+.token-table .id { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+.token-table .last-used, .token-table .scope { font-size: 0.8125rem; color: var(--muted); }
+.token-table .scope-pill { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; font-weight: 600; padding: 2px 7px; border-radius: 3px; background: var(--bone-warm); color: var(--ink); border: 1px solid var(--border); }
+.token-actions { display: flex; gap: 6px; }
+.token-action { background: transparent; border: none; font-size: 0.75rem; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 3px; }
+.token-action:hover { color: var(--ink); background: var(--bone-warm); }
+.token-action.danger:hover { color: oklch(50% 0.20 25); }
+.create-btn { background: var(--ink); color: var(--bone); border: none; border-radius: 6px; padding: 9px 18px; font-family: 'Inter Tight', sans-serif; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background 120ms; }
+.create-btn:hover { background: var(--teal); }
+.danger-btn { background: transparent; border: 1px solid oklch(50% 0.20 25); color: oklch(50% 0.20 25); border-radius: 6px; padding: 7px 14px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+:root[data-theme="dark"] .danger-btn { color: oklch(70% 0.18 25); border-color: oklch(70% 0.18 25); }
+
+/* ==================== EDIT (with tags + indexing) ==================== */
+.edit { background: var(--bone); border: 1px solid var(--border); border-radius: 6px; min-height: 540px; padding: 18px 24px; position: relative; }
+.edit__head { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: baseline; padding-bottom: 12px; margin-bottom: 12px; margin-right: 48px; border-bottom: 1px solid var(--border); }
+.edit__title-input { background: transparent; border: none; outline: none; font-size: 1.125rem; font-weight: 600; color: var(--ink); }
+.edit__kind-input { background: transparent; border: none; outline: none; font-family: 'Inter Tight', sans-serif; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); width: 130px; text-align: right; }
+.edit__kind-input::placeholder { color: var(--muted); opacity: 0.6; }
+.edit__meta-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px dotted var(--border); flex-wrap: wrap; }
+.edit__tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0; }
+.edit__tags-label { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.edit__tag { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--teal); border: 1px solid var(--teal); border-radius: 4px; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; padding: 2px 6px 2px 8px; }
+.edit__tag-remove { color: var(--teal); cursor: pointer; opacity: 0.6; font-size: 0.875em; }
+.edit__tag-remove:hover { opacity: 1; }
+.edit__tag-input { background: transparent; border: none; outline: none; font-size: 0.75rem; color: var(--muted); padding: 3px 4px; min-width: 100px; }
+.edit__indexing { display: flex; align-items: center; gap: 8px; }
+.edit__indexing-label { font-size: 0.6875rem; font-weight: 500; color: var(--muted); }
+.edit__textarea { display: block; width: 100%; min-height: 320px; background: var(--bone-warm); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; line-height: 1.65; color: var(--ink); resize: vertical; }
+
+@media (max-width: 1100px) {
+  .reader-grid { grid-template-columns: 1fr; gap: 24px; }
+  .outline { display: none; }
+}
+
+/* ===== INTERACTIVE STATES ===== */
+.reader.is-full p, .reader.is-full h1, .reader.is-full h2, .reader.is-full h3, .reader.is-full ul { max-width: none; }
+.reader.is-full pre { max-width: none; }
+
+#palette-modal { display: none; position: fixed; inset: 0; z-index: 200; background: oklch(0% 0 0 / 0.45); padding-top: 80px; align-items: flex-start; justify-content: center; }
+#palette-modal.is-visible { display: flex; }
+:root[data-theme="dark"] #palette-modal { background: oklch(0% 0 0 / 0.6); }
+#palette-modal .palette { width: min(560px, calc(100% - 48px)); }
+
+.proto-banner { background: var(--bone-warm); border: 1px solid var(--teal); border-radius: 6px; padding: 12px 16px; margin-bottom: 32px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 0.8125rem; color: var(--ink); }
+.proto-banner__label { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.6875rem; color: var(--teal); }
+.proto-banner kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; padding: 2px 7px; border: 1px solid var(--border); border-radius: 3px; color: var(--ink); background: var(--bone); }
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()" id="toggle-btn">Toggle dark</button>
+
+<div class="intro">
+  <div class="intro__eyebrow">md · year-one vision · all features integrated</div>
+  <h1 class="intro__h1">What md could feel like with all the planned features in.</h1>
+  <p class="intro__p">Same direction (Watermark, Fog + Ochre, W1 underline-draw, sans body). Now showing every roadmap surface threaded together: outline panel + width toggle on the reader; search bar + tag filter chips on operator home; cmd-palette overlay; Settings page with API tokens + reading defaults; edit form with tags + indexing toggle; branded og:image unfurl. Anything not designed here lives in <code style="font-family: 'JetBrains Mono', monospace; background: var(--bone-warm); padding: 1px 5px; border-radius: 3px;">Future surfaces</code> as a deferred decision.</p>
+
+  <div class="proto-banner">
+    <span class="proto-banner__label">Interactive prototype</span>
+    <span>Click any <strong>watermark glyph</strong> to open its menu.</span>
+    <span>Press <kbd>⌘ K</kbd> (or <kbd>Ctrl K</kbd>) anywhere to open the cmd-palette.</span>
+    <span><kbd>esc</kbd> closes overlays.</span>
+    <span>Click pills + switches to toggle. Outline links scroll the page.</span>
+  </div>
+</div>
+
+<!-- ==================== UNFURL ==================== -->
+<section class="surface surface--narrow">
+  <div class="surface__label"><span>Surface · Chat unfurl with branded og:image</span><span class="feat">deferred · plan.md</span></div>
+  <p class="surface__sub">og:image rendered server-side at upload via <code style="font-family: 'JetBrains Mono', monospace;">opengraph-image.tsx</code>. Cream background, ink title, ochre rule, watermark glyph. Carries md's brand into every chat preview.</p>
+  <div class="chat">
+    <div class="chat__msg">
+      <div class="chat__avatar"></div>
+      <div class="chat__msg-body">
+        <div class="chat__name">Mark</div>
+        <div>here's the patch endpoint thing</div>
+        <div class="chat__link">https://md.niftymonkey.dev/v/q4k2m</div>
+      </div>
+    </div>
+    <div class="unfurl">
+      <div class="og-image">
+        <div class="og-image__top">
+          <div class="og-image__mast">md · niftymonkey.dev</div>
+          <div class="og-image__glyph">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5l5 7 5-7v14"/><path d="M16 5l5 14"/></svg>
+          </div>
+        </div>
+        <div class="og-image__title">Notes on the patch endpoint</div>
+        <div class="og-image__date">APR 27, 2026</div>
+      </div>
+      <div class="unfurl__body">
+        <div class="unfurl__url">md.niftymonkey.dev</div>
+        <div class="unfurl__title">Notes on the patch endpoint</div>
+        <div class="unfurl__desc">Three things stood out when I went back through the PATCH design after the review on #20.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== READER (with outline + tooltip) ==================== -->
+<section class="surface">
+  <div class="surface__label"><span>Surface · Reader · /v/q4k2m</span><span class="feat">outline · width toggle · tooltip menu</span></div>
+  <p class="surface__sub">Outline auto-shown on this doc (≥ 3 H2s). Watermark expanded to show the full reader-mode menu. Hover the watermark glyph to feel the W1 underline-draw.</p>
+  <div class="reader-page">
+    <div class="reader-grid">
+      <article class="reader">
+        <h1 id="h-title">Notes on the patch endpoint</h1>
+        <p>Three things stood out when I went back through the PATCH design after the review on #20. The middleware didn't change shape, but the contract for partial updates needed a fence around what counts as a no-op response, and the title-derivation rule needed to survive a content-only update without surprising the operator.</p>
+        <p>The bigger lesson is one I keep relearning. When the spec is "update only what changed," the trap is letting the API silently accept noise: empty strings, whitespace-only payloads, fields that match what was already stored.</p>
+
+        <h2 id="h-auth">The auth gate</h2>
+        <p>Bearer-first, session fallback. The order matters when an authenticated browser tab is also sending an API key for some reason. We chose bearer first because the API client is the more deliberate caller.</p>
+
+        <h3 id="h-bearer">Bearer flow</h3>
+        <p>Bearer is checked synchronously against <code>MD_API_KEY</code>. Owner-id is stamped from <code>MD_API_OWNER_ID</code>.</p>
+
+        <h3 id="h-session">Session fallback</h3>
+        <p>Session is checked against the WorkOS allow-list. Owner-id is the user's WorkOS id.</p>
+        <pre><span class="sh-com">// max upload size — 1 MB, both bearer and session paths share the same cap</span>
+<span class="sh-kw">const</span> <span class="sh-prop">MAX_BYTES</span> <span class="sh-pn">=</span> <span class="sh-num">1024</span> <span class="sh-pn">*</span> <span class="sh-num">1024</span><span class="sh-pn">;</span>
+
+<span class="sh-kw">export async function</span> <span class="sh-fn">resolveOwner</span><span class="sh-pn">(</span>req<span class="sh-pn">:</span> <span class="sh-ty">Request</span><span class="sh-pn">):</span> <span class="sh-ty">Promise</span><span class="sh-pn">&lt;</span><span class="sh-ty">Owner</span> <span class="sh-pn">|</span> <span class="sh-ty">null</span><span class="sh-pn">&gt;</span> <span class="sh-pn">{</span>
+  <span class="sh-kw">const</span> bearer <span class="sh-pn">=</span> req<span class="sh-pn">.</span><span class="sh-prop">headers</span><span class="sh-pn">.</span><span class="sh-fn">get</span><span class="sh-pn">(</span><span class="sh-str">"authorization"</span><span class="sh-pn">)?.</span><span class="sh-fn">trim</span><span class="sh-pn">();</span>
+  <span class="sh-kw">if</span> <span class="sh-pn">(</span>bearer <span class="sh-pn">===</span> <span class="sh-str">`Bearer ${env.MD_API_KEY}`</span><span class="sh-pn">)</span> <span class="sh-pn">{</span>
+    <span class="sh-kw">return</span> <span class="sh-pn">{</span> <span class="sh-prop">id</span><span class="sh-pn">:</span> env<span class="sh-pn">.</span><span class="sh-prop">MD_API_OWNER_ID</span><span class="sh-pn">,</span> <span class="sh-prop">source</span><span class="sh-pn">:</span> <span class="sh-str">"bearer"</span> <span class="sh-pn">};</span>
+  <span class="sh-pn">}</span>
+  <span class="sh-kw">return null</span><span class="sh-pn">;</span>
+<span class="sh-pn">}</span></pre>
+
+        <h2 id="h-edge">Edge cases</h2>
+        <p>Whitespace-only updates count as no-ops. Empty strings reset the title to derived. Concurrent writes are last-write-wins for v1.</p>
+
+        <h2 id="h-migration">Migration plan</h2>
+        <p>Ship the no-op detection in a follow-up; existing clients won't notice because they send full payloads. The 422 path waits until we have a real schema validator wired in.</p>
+      </article>
+
+      <nav class="outline" aria-label="On this page">
+        <div class="outline__head">
+          <div class="outline__title">On this page</div>
+          <div class="reader-toolbar">
+            <button class="toolbar-btn is-active" id="outline-toggle-btn" aria-label="Hide outline" title="Hide outline">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+            </button>
+            <div class="watermark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5l5 7 5-7v14"/><path d="M16 5l5 14"/></svg>
+              <div class="wm-tooltip">
+                <div class="wm-tooltip__group">
+                  <div class="wm-tooltip__group-h">Document</div>
+                  <div class="wm-row"><span class="label"><span class="icon">→</span>view raw</span><span class="kbd">r</span></div>
+                  <div class="wm-row"><span class="label"><span class="icon">⎘</span>copy link</span><span class="kbd">c</span></div>
+                </div>
+                <div class="wm-tooltip__group">
+                  <div class="wm-tooltip__group-h">View</div>
+                  <div class="wm-row"><span class="label"><span class="icon">↔</span>width</span>
+                    <span class="toggle-pill"><button class="is-active">Reading</button><button>Full</button></span>
+                  </div>
+                </div>
+                <div class="wm-tooltip__group">
+                  <div class="wm-row"><span class="label"><span class="icon">↗</span>md.niftymonkey.dev</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ol class="outline__list">
+          <li><a href="#h-auth" class="is-current">The auth gate</a>
+            <ol>
+              <li><a href="#h-bearer" class="is-current">Bearer flow</a></li>
+              <li><a href="#h-session">Session fallback</a></li>
+            </ol>
+          </li>
+          <li><a href="#h-edge">Edge cases</a></li>
+          <li><a href="#h-migration">Migration plan</a></li>
+        </ol>
+      </nav>
+    </div>
+
+    <button class="reader-show-outline" id="outline-show-btn" aria-label="Show outline" title="Show outline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+    </button>
+  </div>
+</section>
+
+<!-- ==================== READER MOBILE ==================== -->
+<section class="surface surface--narrow">
+  <div class="surface__label"><span>Surface · Reader (mobile)</span><span class="feat">outline opens as bottom sheet via tooltip</span></div>
+  <div class="phone">
+    <div class="phone__inner">
+      <h1>Notes on the patch endpoint</h1>
+      <p>Three things stood out when I went back through the PATCH design after the review on #20.</p>
+      <p>The bigger lesson is one I keep relearning: silent acceptance of no-op payloads is a bug.</p>
+      <p>Bearer-first, session fallback. The API client is the more deliberate caller.</p>
+      <div class="phone__watermark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5l5 7 5-7v14"/><path d="M16 5l5 14"/></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== OPERATOR HOME (with search + tags) ==================== -->
+<section class="surface">
+  <div class="surface__label"><span>Surface · Operator home · /</span><span class="feat">search · tag filters · cmd-palette trigger</span></div>
+  <p class="surface__sub">Search bar at top is the primary entry once the doc count grows. Click or press <code style="font-family: 'JetBrains Mono', monospace;">⌘K</code> to open the cmd-palette. Tag chips below filter the recent rail. Watermark glyph still anchors the universal nav.</p>
+  <div class="op">
+    <div class="op__topbar">
+      <div class="op__search">
+        <svg class="op__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input class="op__search-input" placeholder="Search docs, settings, actions…">
+        <span class="op__search-kbd">⌘ K</span>
+      </div>
+      <div class="watermark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5l5 7 5-7v14"/><path d="M16 5l5 14"/></svg>
+        <div class="wm-tooltip">
+          <div class="wm-tooltip__group">
+            <div class="wm-tooltip__group-h">Operator</div>
+            <div class="wm-row"><span class="label"><span class="icon">⌘</span>command palette</span><span class="kbd">⌘K</span></div>
+            <div class="wm-row"><span class="label"><span class="icon">⚙</span>settings</span></div>
+            <div class="wm-row"><span class="label"><span class="icon">▦</span>all docs</span></div>
+          </div>
+          <div class="wm-tooltip__group">
+            <div class="wm-row"><span class="label"><span class="icon">↗</span>sign out</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="op__filters">
+      <span class="op__filter-label">Tags</span>
+      <button class="op__chip is-active">All</button>
+      <button class="op__chip">auth</button>
+      <button class="op__chip">postgres</button>
+      <button class="op__chip">tracer-bullets</button>
+      <button class="op__chip">Q2-2026</button>
+      <button class="op__chip">workos</button>
+      <button class="op__chip" style="opacity: 0.5;">+ 7 more</button>
+    </div>
+    <div class="op__dropzone">
+      <div class="op__hint">Drop a markdown file here</div>
+      <div class="op__hint-sub">or paste below · ⌘ + Enter to publish · 1MB cap</div>
+    </div>
+    <div class="op__recent-h">Recent · 6 docs</div>
+    <div class="op__row">
+      <span class="title">PR #21 — view-nav-header</span>
+      <span class="tags"><span class="tag">workos</span><span class="tag">UI</span></span>
+      <span class="date">Apr 28, 2026</span>
+    </div>
+    <div class="op__row">
+      <span class="title">Notes on the patch endpoint</span>
+      <span class="tags"><span class="tag">auth</span><span class="tag">postgres</span></span>
+      <span class="date">Apr 27, 2026</span>
+    </div>
+    <div class="op__row">
+      <span class="title">Reading: tracer bullets in practice</span>
+      <span class="tags"><span class="tag">tracer-bullets</span></span>
+      <span class="date">Apr 24, 2026</span>
+    </div>
+    <div class="op__row">
+      <span class="title">Q2 plan checkpoint</span>
+      <span class="tags"><span class="tag">Q2-2026</span></span>
+      <span class="date">Apr 18, 2026</span>
+    </div>
+    <div class="op__row">
+      <span class="title">Migration: kind column rollout</span>
+      <span class="tags"><span class="tag">postgres</span><span class="tag">migration</span></span>
+      <span class="date">Apr 12, 2026</span>
+    </div>
+    <div class="op__row">
+      <span class="title">md PRD — exploration</span>
+      <span class="tags"><span class="tag">md</span></span>
+      <span class="date">Apr 03, 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CMD-PALETTE OVERLAY ==================== -->
+<section class="surface">
+  <div class="surface__label"><span>Surface · Cmd-palette overlay</span><span class="feat">future · the universal nav at scale</span></div>
+  <p class="surface__sub">Once the operator tooltip + search + tag filter all want the same input affordance, the cmd-palette absorbs them. <code style="font-family: 'JetBrains Mono', monospace;">⌘K</code> from anywhere; <code style="font-family: 'JetBrains Mono', monospace;">/</code> in the search bar; or via the watermark tooltip.</p>
+  <div class="palette-frame">
+    <div class="palette-overlay">
+      <div class="palette">
+        <div class="palette__search">
+          <svg class="palette__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input class="palette__search-input" value="patch" placeholder="Search docs, settings, actions…">
+        </div>
+        <div class="palette__group">
+          <div class="palette__group-h"><span>Documents</span><span class="count">3 matches</span></div>
+          <div class="palette__row is-selected" style="position: relative;">
+            <div class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+            <span class="title">Notes on the <strong>patch</strong> endpoint</span>
+            <span class="meta">Apr 27</span>
+          </div>
+          <div class="palette__row">
+            <div class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+            <span class="title">Migration: <strong>patch</strong> column rollout</span>
+            <span class="meta">Apr 12</span>
+          </div>
+          <div class="palette__row">
+            <div class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+            <span class="title">PR #20 review — <strong>patch</strong> + edit UI</span>
+            <span class="meta">Apr 22</span>
+          </div>
+        </div>
+        <div class="palette__group">
+          <div class="palette__group-h"><span>Actions</span></div>
+          <div class="palette__row">
+            <div class="icon">+</div>
+            <span class="title">New document</span>
+            <span class="kbd">⌘N</span>
+          </div>
+          <div class="palette__row">
+            <div class="icon">⚙</div>
+            <span class="title">Open settings</span>
+            <span class="kbd">⌘,</span>
+          </div>
+          <div class="palette__row">
+            <div class="icon">↗</div>
+            <span class="title">Sign out</span>
+          </div>
+        </div>
+        <div class="palette__footer">
+          <span><span class="kbd">↑↓</span> navigate</span>
+          <span><span class="kbd">↵</span> open</span>
+          <span><span class="kbd">esc</span> close</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SETTINGS ==================== -->
+<section class="surface">
+  <div class="surface__label"><span>Surface · /settings</span><span class="feat">imminent · token mgmt + reading defaults</span></div>
+  <p class="surface__sub">Lives behind the watermark tooltip → "settings" or <code style="font-family: 'JetBrains Mono', monospace;">⌘,</code>. Sectioned, list-shaped, no card chrome. The "auto-show outline" toggle here is the master kill-switch.</p>
+  <div class="settings">
+    <h1 class="settings__h1">Settings</h1>
+    <p class="settings__sub">Operator preferences and API token management for md.</p>
+
+    <section class="settings__section">
+      <h2 class="settings__section-h">Reading</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-row__label">Auto-show outline</div>
+          <div class="setting-row__desc">When enabled, the outline panel auto-opens on docs with three or more H2 headings. You can hide it per-doc via the watermark menu. When disabled, the outline only opens when you toggle it.</div>
+        </div>
+        <div class="setting-switch"></div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-row__label">Default width</div>
+          <div class="setting-row__desc">Article column width for new doc views. Reading is comfortable for prose; full uses the wider container for tables and wide diagrams.</div>
+        </div>
+        <div class="setting-pill">
+          <button class="is-active">Reading</button>
+          <button>Full</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings__section">
+      <h2 class="settings__section-h">API tokens</h2>
+      <p style="font-size: 0.875rem; color: var(--muted); margin-bottom: 14px;">Personal access tokens replace the static <code style="font-family: 'JetBrains Mono', monospace; background: var(--bone-warm); padding: 1px 5px; border-radius: 3px;">MD_API_KEY</code>. Each token is scoped and revocable. The token value is shown only at creation.</p>
+      <table class="token-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>ID</th>
+            <th>Scope</th>
+            <th>Last used</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="name">md-upload skill</td>
+            <td class="id">md_a3f9…b2e1</td>
+            <td><span class="scope-pill">upload</span></td>
+            <td class="last-used">5 min ago</td>
+            <td class="token-actions"><button class="token-action danger">revoke</button></td>
+          </tr>
+          <tr>
+            <td class="name">other-app prod</td>
+            <td class="id">md_c1bd…74a9</td>
+            <td><span class="scope-pill">upload, read</span></td>
+            <td class="last-used">2 hr ago</td>
+            <td class="token-actions"><button class="token-action danger">revoke</button></td>
+          </tr>
+          <tr>
+            <td class="name">curl from laptop</td>
+            <td class="id">md_8e22…1f0c</td>
+            <td><span class="scope-pill">upload</span></td>
+            <td class="last-used">12 days ago</td>
+            <td class="token-actions"><button class="token-action danger">revoke</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <button class="create-btn" style="margin-top: 14px;">Create new token</button>
+    </section>
+
+    <section class="settings__section">
+      <h2 class="settings__section-h">Defaults</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-row__label">Default kind</div>
+          <div class="setting-row__desc">Pre-fills the kind field on new uploads. Leave blank for none. Free-form (note, rep, synthesis, anything).</div>
+        </div>
+        <input style="background: var(--bone-warm); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: 'Inter Tight', sans-serif; font-size: 0.875rem; color: var(--ink); outline: none; width: 140px; text-align: right;" placeholder="(none)" value="">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-row__label">Allow search engines (default)</div>
+          <div class="setting-row__desc">When on, new docs default to indexable. Per-doc toggle in the edit form overrides this. v1 default: off (every doc is noindex,nofollow).</div>
+        </div>
+        <div class="setting-switch is-off"></div>
+      </div>
+    </section>
+
+    <section class="settings__section">
+      <h2 class="settings__section-h">Account</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-row__label">Operator</div>
+          <div class="setting-row__desc">Signed in as <code style="font-family: 'JetBrains Mono', monospace;">mark.d.lozano@gmail.com</code> via WorkOS. Allow-list managed via env.</div>
+        </div>
+        <button class="danger-btn">Sign out</button>
+      </div>
+    </section>
+
+    <div class="watermark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5l5 7 5-7v14"/><path d="M16 5l5 14"/></svg>
+      <div class="wm-tooltip">
+        <div class="wm-tooltip__group">
+          <div class="wm-row"><span class="label"><span class="icon">⌘</span>command palette</span><span class="kbd">⌘K</span></div>
+          <div class="wm-row"><span class="label"><span class="icon">←</span>back to dashboard</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== EDIT (with tags + indexing) ==================== -->
+<section class="surface">
+  <div class="surface__label"><span>Surface · Edit · /edit/q4k2m</span><span class="feat">tags · indexing toggle · still mono-led</span></div>
+  <p class="surface__sub">Tags are a chip-input below the title row. Per-doc indexing toggle sits next to tags. Kind stays as a single inline input (different role: classification vs. labels). Markdown textarea is still the main surface.</p>
+  <div class="edit">
+    <div class="edit__head">
+      <input class="edit__title-input" value="Notes on the patch endpoint" placeholder="Title">
+      <input class="edit__kind-input" value="" placeholder="KIND (optional)">
+    </div>
+    <div class="edit__meta-row">
+      <div class="edit__tags">
+        <span class="edit__tags-label">Tags</span>
+        <span class="edit__tag">auth <span class="edit__tag-remove">×</span></span>
+        <span class="edit__tag">postgres <span class="edit__tag-remove">×</span></span>
+        <span class="edit__tag">tracer-bullets <span class="edit__tag-remove">×</span></span>
+        <input class="edit__tag-input" placeholder="add tag…">
+      </div>
+      <div class="edit__indexing">
+        <span class="edit__indexing-label">Allow search engines</span>
+        <div class="setting-switch is-off"></div>
+      </div>
+    </div>
+    <textarea class="edit__textarea"># Notes on the patch endpoint
+
+Three things stood out when I went back through the PATCH design after the review on #20.
+
+## The auth gate
+
+Bearer-first, session fallback.
+
+```ts
+export async function resolveOwner(req: Request) {
+  const bearer = req.headers.get("authorization")?.trim();
+  if (bearer === `Bearer ${env.MD_API_KEY}`) {
+    return { id: env.MD_API_OWNER_ID, source: "bearer" };
+  }
+  // ...
+}
+```
+</textarea>
+    <div class="watermark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5l5 7 5-7v14"/><path d="M16 5l5 14"/></svg>
+      <div class="wm-tooltip">
+        <div class="wm-tooltip__group">
+          <div class="wm-tooltip__group-h">Editing</div>
+          <div class="wm-row"><span class="label"><span class="icon">↵</span>save</span><span class="kbd">⌘S</span></div>
+          <div class="wm-row"><span class="label"><span class="icon">↶</span>cancel</span><span class="kbd">esc</span></div>
+          <div class="wm-row"><span class="label"><span class="icon">→</span>view raw</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Floating cmd-palette modal — opens on ⌘K from anywhere -->
+<div id="palette-modal" role="dialog" aria-label="Command palette">
+  <div class="palette">
+    <div class="palette__search">
+      <svg class="palette__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="palette-search-input" class="palette__search-input" placeholder="Search docs, settings, actions…">
+    </div>
+    <div class="palette__group">
+      <div class="palette__group-h"><span>Documents</span><span class="count">recent</span></div>
+      <div class="palette__row is-selected" style="position: relative;">
+        <div class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+        <span class="title">Notes on the patch endpoint</span>
+        <span class="meta">Apr 27</span>
+      </div>
+      <div class="palette__row">
+        <div class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+        <span class="title">PR #21 — view-nav-header</span>
+        <span class="meta">Apr 28</span>
+      </div>
+      <div class="palette__row">
+        <div class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+        <span class="title">Reading: tracer bullets in practice</span>
+        <span class="meta">Apr 24</span>
+      </div>
+    </div>
+    <div class="palette__group">
+      <div class="palette__group-h"><span>Actions</span></div>
+      <div class="palette__row"><div class="icon">+</div><span class="title">New document</span><span class="kbd">⌘N</span></div>
+      <div class="palette__row"><div class="icon">⚙</div><span class="title">Open settings</span><span class="kbd">⌘,</span></div>
+      <div class="palette__row"><div class="icon">↗</div><span class="title">Sign out</span></div>
+    </div>
+    <div class="palette__footer">
+      <span><span class="kbd">↑↓</span> navigate</span>
+      <span><span class="kbd">↵</span> open</span>
+      <span><span class="kbd">esc</span> close</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ THEME ============
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.dataset.theme === 'light' ? 'dark' : 'light';
+  html.dataset.theme = next;
+  document.getElementById('toggle-btn').textContent = next === 'light' ? 'Toggle dark' : 'Toggle light';
+}
+
+// ============ WATERMARK TOOLTIPS ============
+document.querySelectorAll('.watermark').forEach((wm) => {
+  wm.addEventListener('click', (e) => {
+    if (e.target.closest('.wm-tooltip')) return; // clicks inside tooltip don't toggle
+    e.stopPropagation();
+    const wasOpen = wm.classList.contains('is-open');
+    // close all other watermarks
+    document.querySelectorAll('.watermark.is-open').forEach((other) => other.classList.remove('is-open'));
+    if (!wasOpen) wm.classList.add('is-open');
+  });
+});
+document.addEventListener('mousedown', (e) => {
+  if (!e.target.closest('.watermark')) {
+    document.querySelectorAll('.watermark.is-open').forEach((wm) => wm.classList.remove('is-open'));
+  }
+});
+
+// ============ WIDTH TOGGLE (in watermark tooltip) ============
+document.querySelectorAll('.toggle-pill').forEach((pill) => {
+  const btns = pill.querySelectorAll('button');
+  btns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      btns.forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const isFull = btn.textContent.trim() === 'Full';
+      // Apply to the reader article in the same surface
+      const surface = pill.closest('.reader-page');
+      if (surface) {
+        const reader = surface.querySelector('.reader');
+        if (isFull) reader.classList.add('is-full');
+        else reader.classList.remove('is-full');
+      }
+    });
+  });
+});
+
+// ============ SETTINGS SWITCHES ============
+document.querySelectorAll('.setting-switch, .switch').forEach((sw) => {
+  sw.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sw.classList.toggle('is-off');
+  });
+});
+
+// ============ SETTINGS PILLS ============
+document.querySelectorAll('.setting-pill').forEach((pill) => {
+  pill.querySelectorAll('button').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pill.querySelectorAll('button').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+    });
+  });
+});
+
+// ============ TAG FILTER CHIPS (operator) ============
+document.querySelectorAll('.op__filters').forEach((row) => {
+  row.querySelectorAll('.op__chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      row.querySelectorAll('.op__chip').forEach((c) => c.classList.remove('is-active'));
+      chip.classList.add('is-active');
+    });
+  });
+});
+
+// ============ OUTLINE TOGGLE ============
+// The hide button lives INSIDE the outline panel; clicking it collapses the outline column,
+// which then auto-reveals the floating show button (CSS-driven via .is-outline-hidden class).
+const outlineHideBtn = document.getElementById('outline-toggle-btn');
+const outlineShowBtn = document.getElementById('outline-show-btn');
+const readerPageEl = outlineHideBtn?.closest('.reader-page');
+
+function setOutlineHidden(hidden) {
+  if (!readerPageEl) return;
+  readerPageEl.classList.toggle('is-outline-hidden', hidden);
+  if (outlineHideBtn) outlineHideBtn.classList.toggle('is-active', !hidden);
+}
+
+if (outlineHideBtn) {
+  outlineHideBtn.addEventListener('click', (e) => { e.stopPropagation(); setOutlineHidden(true); });
+}
+if (outlineShowBtn) {
+  outlineShowBtn.addEventListener('click', (e) => { e.stopPropagation(); setOutlineHidden(false); });
+}
+
+// ============ OUTLINE LINKS ============
+document.querySelectorAll('.outline__list a').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    document.querySelectorAll('.outline__list a.is-current').forEach((el) => el.classList.remove('is-current'));
+    a.classList.add('is-current');
+    // also light up parent if this is a sub-item
+    const parentLi = a.closest('ol > li');
+    if (parentLi && parentLi.parentElement.tagName === 'OL' && parentLi.parentElement.parentElement.tagName === 'LI') {
+      const grandparentLink = parentLi.parentElement.parentElement.querySelector(':scope > a');
+      if (grandparentLink) grandparentLink.classList.add('is-current');
+    }
+  });
+});
+
+// ============ CMD-PALETTE MODAL ============
+const paletteModal = document.getElementById('palette-modal');
+const paletteInput = document.getElementById('palette-search-input');
+
+function openPalette() {
+  paletteModal.classList.add('is-visible');
+  setTimeout(() => paletteInput.focus(), 30);
+}
+function closePalette() {
+  paletteModal.classList.remove('is-visible');
+  paletteInput.value = '';
+}
+
+// ⌘K / Ctrl+K from anywhere
+document.addEventListener('keydown', (e) => {
+  const isInputFocused = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openPalette();
+    return;
+  }
+  if (e.key === 'Escape') {
+    closePalette();
+    document.querySelectorAll('.watermark.is-open').forEach((wm) => wm.classList.remove('is-open'));
+    return;
+  }
+  // reader keyboard shortcuts (only when no input focused, palette closed)
+  if (isInputFocused || paletteModal.classList.contains('is-visible')) return;
+  const reader = document.querySelector('.reader-page');
+  if (!reader) return;
+  if (e.key === 'r') {
+    flashHint('view raw');
+  } else if (e.key === 'c') {
+    flashHint('link copied');
+  } else if (e.key === 'o') {
+    if (readerPageEl) {
+      const willHide = !readerPageEl.classList.contains('is-outline-hidden');
+      setOutlineHidden(willHide);
+      flashHint(willHide ? 'outline hidden' : 'outline shown');
+    }
+  } else if (e.key === 'w') {
+    const readerEl = reader.querySelector('.reader');
+    readerEl.classList.toggle('is-full');
+    const pill = reader.querySelector('.toggle-pill');
+    if (pill) {
+      pill.querySelectorAll('button').forEach((b) => b.classList.toggle('is-active'));
+    }
+    flashHint('width: ' + (readerEl.classList.contains('is-full') ? 'full' : 'reading'));
+  }
+});
+
+// click backdrop to close
+paletteModal.addEventListener('click', (e) => {
+  if (e.target === paletteModal) closePalette();
+});
+
+// open via search bar click on operator surface
+document.querySelectorAll('.op__search').forEach((el) => {
+  el.addEventListener('click', openPalette);
+});
+
+// open via watermark "command palette" row
+document.querySelectorAll('.wm-row').forEach((row) => {
+  if (row.textContent.toLowerCase().includes('command palette')) {
+    row.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.watermark.is-open').forEach((wm) => wm.classList.remove('is-open'));
+      openPalette();
+    });
+  }
+});
+
+// ============ HINT FLASH (for keyboard shortcuts) ============
+let hintTimer = null;
+function flashHint(message) {
+  let hint = document.getElementById('hint-flash');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = 'hint-flash';
+    hint.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bone);padding:8px 18px;border-radius:6px;font-size:0.8125rem;font-weight:500;z-index:300;box-shadow:var(--shadow-soft);opacity:0;transition:opacity 180ms cubic-bezier(0.25,1,0.5,1);';
+    document.body.appendChild(hint);
+  }
+  hint.textContent = message;
+  hint.style.opacity = '1';
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { hint.style.opacity = '0'; }, 1400);
+}
+</script>
+</body>
+</html>

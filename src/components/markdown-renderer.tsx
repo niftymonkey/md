@@ -2,6 +2,7 @@ import { MarkdownAsync } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeShiki from "@shikijs/rehype";
 import { rehypeMermaid } from "@/lib/rehype-mermaid";
+import { rehypeHeadingIds } from "@/lib/heading-utils";
 import { Mermaid } from "@/components/mermaid";
 
 export async function MarkdownRenderer({ content }: { content: string }) {
@@ -10,6 +11,7 @@ export async function MarkdownRenderer({ content }: { content: string }) {
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[
         rehypeMermaid,
+        rehypeHeadingIds,
         [
           rehypeShiki,
           {

@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-29T00:00:00Z",
+  "title": "Design System: md.niftymonkey.dev",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(95% 0.008 145)",
+        "tonalRamp": [
+          "oklch(20% 0.014 220)",
+          "oklch(30% 0.014 200)",
+          "oklch(42% 0.016 180)",
+          "oklch(55% 0.018 165)",
+          "oklch(70% 0.014 150)",
+          "oklch(82% 0.010 145)",
+          "oklch(89% 0.009 145)",
+          "oklch(95% 0.008 145)"
+        ]
+      },
+      "paper-warm": {
+        "role": "neutral",
+        "displayName": "Paper Warm",
+        "canonical": "oklch(92% 0.012 140)"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(24% 0.014 240)",
+        "tonalRamp": [
+          "oklch(15% 0.012 220)",
+          "oklch(24% 0.014 240)",
+          "oklch(34% 0.016 230)",
+          "oklch(48% 0.018 200)",
+          "oklch(62% 0.018 165)",
+          "oklch(76% 0.014 145)",
+          "oklch(86% 0.012 142)",
+          "oklch(94% 0.008 145)"
+        ]
+      },
+      "ink-warm": {
+        "role": "neutral",
+        "displayName": "Ink Warm",
+        "canonical": "oklch(92% 0.012 100)"
+      },
+      "border-day": {
+        "role": "neutral",
+        "displayName": "Border Day",
+        "canonical": "oklch(85% 0.012 140)"
+      },
+      "border-night": {
+        "role": "neutral",
+        "displayName": "Border Night",
+        "canonical": "oklch(32% 0.014 220)"
+      },
+      "muted-day": {
+        "role": "neutral",
+        "displayName": "Muted Day",
+        "canonical": "oklch(48% 0.018 200)"
+      },
+      "muted-night": {
+        "role": "neutral",
+        "displayName": "Muted Night",
+        "canonical": "oklch(64% 0.018 110)"
+      },
+      "dark-fog": {
+        "role": "neutral",
+        "displayName": "Dark Fog",
+        "canonical": "oklch(19% 0.014 220)"
+      },
+      "dark-fog-warm": {
+        "role": "neutral",
+        "displayName": "Dark Fog Warm",
+        "canonical": "oklch(23% 0.014 220)"
+      },
+      "ochre": {
+        "role": "primary",
+        "displayName": "Ochre",
+        "canonical": "oklch(64% 0.14 85)",
+        "tonalRamp": [
+          "oklch(22% 0.08 70)",
+          "oklch(32% 0.10 75)",
+          "oklch(44% 0.13 78)",
+          "oklch(54% 0.16 80)",
+          "oklch(64% 0.14 85)",
+          "oklch(76% 0.14 85)",
+          "oklch(86% 0.10 90)",
+          "oklch(94% 0.06 95)"
+        ]
+      },
+      "ochre-deep": {
+        "role": "primary",
+        "displayName": "Ochre Deep",
+        "canonical": "oklch(54% 0.16 80)"
+      },
+      "ochre-night": {
+        "role": "primary",
+        "displayName": "Ochre Night",
+        "canonical": "oklch(76% 0.14 85)"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "H1 of /v docs, page titles. Real foundry-weight not flat-scale large." },
+      "headline": { "displayName": "Headline", "purpose": "H2s, section dividers in operator chrome." },
+      "title": { "displayName": "Title", "purpose": "Row labels, button text, form section headers." },
+      "body": { "displayName": "Body", "purpose": "Article prose and form help text. Capped at 65ch (Reading) or 80ch (Full)." },
+      "label": { "displayName": "Label", "purpose": "Section eyebrows, kind tags, surface stamps, kbd hints. Always uppercase, letter-spaced." },
+      "mono": { "displayName": "Mono Chrome", "purpose": "Slugs, dates, kbd hints, footer micro-type. The receipt voice." },
+      "code": { "displayName": "Code", "purpose": "Inline code and Shiki-rendered code blocks." }
+    },
+    "shadows": [
+      { "name": "tactile-input", "value": "0 1px 0 oklch(85% 0.012 140 / 0.6)", "purpose": "Persistent on text inputs and textareas. Reads like a printed underline rather than a drop shadow." },
+      { "name": "press", "value": "inset 0 1px 0 oklch(0% 0 0 / 0.08)", "purpose": "Primary buttons on :active. Softer than the default browser press." },
+      { "name": "focus-ring", "value": "0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85)", "purpose": "Two-step outline (paper offset + ochre ring). Identical for keyboard and mouse focus." },
+      { "name": "tooltip-soft", "value": "0 4px 24px oklch(20% 0.014 240 / 0.10)", "purpose": "Watermark tooltips and the cmd-palette modal. The only floating-overlay shadow." }
+    ],
+    "motion": [
+      { "name": "ease-out-quart", "value": "cubic-bezier(0.25, 1, 0.5, 1)", "purpose": "Default easing for state transitions on chrome (hover, focus, press)." },
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Snappier-finish easing for entrance/disclosure (cmd-palette open, outline reveal, watermark underline-draw)." },
+      { "name": "duration-fast", "value": "120ms", "purpose": "Hover state changes, color shifts." },
+      { "name": "duration-base", "value": "220ms", "purpose": "Press, focus, disclosure transitions." },
+      { "name": "duration-slow", "value": "280ms", "purpose": "Watermark underline-draw, outline panel toggle." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "outline", "value": "1100px", "purpose": "Outline panel auto-shows at this width and above." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Watermark Glyph",
+      "kind": "custom",
+      "refersTo": "watermark",
+      "description": "The signature mark. Universal corner glyph with click-to-reveal tooltip menu. W1 underline-draw on hover.",
+      "html": "<button class=\"ds-watermark\" aria-label=\"Open menu\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 19V5l5 7 5-7v14\"/><path d=\"M16 5l5 14\"/></svg></button>",
+      "css": ".ds-watermark { width: 32px; height: 32px; border-radius: 6px; background: oklch(95% 0.008 145); border: 1px solid oklch(85% 0.012 140); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: visible; transition: border-color 220ms cubic-bezier(0.25,1,0.5,1); padding: 0; } .ds-watermark::after { content: ''; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); width: 0; height: 2px; background: oklch(64% 0.14 85); transition: width 280ms cubic-bezier(0.25,1,0.5,1); } .ds-watermark:hover { border-color: oklch(64% 0.14 85); } .ds-watermark:hover::after { width: 100%; } .ds-watermark svg { width: 16px; height: 16px; color: oklch(64% 0.14 85); } .ds-watermark:focus-visible { outline: none; box-shadow: 0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85); } @media (prefers-reduced-motion: reduce) { .ds-watermark::after { transition: none; } }"
+    },
+    {
+      "name": "Toolbar Button",
+      "kind": "button",
+      "refersTo": "toolbar-button",
+      "description": "Icon-only square button. Used in the reader toolbar (outline toggle), and as the floating show-outline button.",
+      "html": "<button class=\"ds-toolbar-btn ds-toolbar-btn--active\" aria-label=\"Hide outline\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"4\" y1=\"6\" x2=\"20\" y2=\"6\"/><line x1=\"8\" y1=\"12\" x2=\"20\" y2=\"12\"/><line x1=\"12\" y1=\"18\" x2=\"20\" y2=\"18\"/></svg></button>",
+      "css": ".ds-toolbar-btn { width: 32px; height: 32px; border-radius: 6px; background: oklch(95% 0.008 145); border: 1px solid oklch(85% 0.012 140); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 220ms cubic-bezier(0.25,1,0.5,1), background 220ms cubic-bezier(0.25,1,0.5,1); padding: 0; } .ds-toolbar-btn svg { width: 16px; height: 16px; color: oklch(48% 0.018 200); transition: color 220ms cubic-bezier(0.25,1,0.5,1); } .ds-toolbar-btn:hover { border-color: oklch(64% 0.14 85); background: oklch(92% 0.012 140); } .ds-toolbar-btn:hover svg { color: oklch(64% 0.14 85); } .ds-toolbar-btn--active { background: oklch(64% 0.14 85); border-color: oklch(64% 0.14 85); } .ds-toolbar-btn--active svg { color: oklch(95% 0.008 145); } .ds-toolbar-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85); }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Save / Submit / Create. The inverted-fill anchor of any form.",
+      "html": "<button class=\"ds-btn-primary\">Save</button>",
+      "css": ".ds-btn-primary { background: oklch(24% 0.014 240); color: oklch(95% 0.008 145); font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: -0.005em; line-height: 1.3; padding: 9px 18px; border: none; border-radius: 6px; cursor: pointer; transition: background 120ms cubic-bezier(0.25,1,0.5,1), transform 120ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-primary:hover { background: oklch(54% 0.16 80); } .ds-btn-primary:active { transform: translateY(1px); box-shadow: inset 0 1px 0 oklch(0% 0 0 / 0.08); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85); } .ds-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Cancel, secondary actions. Mono-caps label so the action reads as a stamp, not a CTA.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: oklch(24% 0.014 240); font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.4; padding: 6px 12px; border: 1px solid oklch(85% 0.012 140); border-radius: 6px; cursor: pointer; transition: background 120ms cubic-bezier(0.25,1,0.5,1); font-variant-numeric: tabular-nums; } .ds-btn-ghost:hover { background: oklch(92% 0.012 140); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Title, kind, settings field. The persistent hairline shadow reads as a printed underline, not a drop shadow.",
+      "html": "<input class=\"ds-input-text\" type=\"text\" placeholder=\"Title\" />",
+      "css": ".ds-input-text { display: block; width: 100%; background: oklch(92% 0.012 140); color: oklch(24% 0.014 240); font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; font-size: 1.0625rem; font-weight: 400; line-height: 1.65; padding: 10px 14px; border: 1px solid oklch(85% 0.012 140); border-radius: 6px; box-shadow: 0 1px 0 oklch(85% 0.012 140 / 0.6); transition: box-shadow 220ms cubic-bezier(0.25,1,0.5,1); } .ds-input-text::placeholder { color: oklch(48% 0.018 200); opacity: 0.7; } .ds-input-text:focus { outline: none; box-shadow: 0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85); }"
+    },
+    {
+      "name": "Markdown Textarea",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Editing markdown reads as editing a code file. Mono typography, paper-warm bg, hairline tactile underline.",
+      "html": "<textarea class=\"ds-input-textarea\" rows=\"20\" spellcheck=\"false\" aria-label=\"Markdown content\"></textarea>",
+      "css": ".ds-input-textarea { display: block; width: 100%; resize: vertical; background: oklch(92% 0.012 140); color: oklch(24% 0.014 240); font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; font-size: 0.875rem; font-weight: 400; line-height: 1.65; padding: 14px 16px; border: 1px solid oklch(85% 0.012 140); border-radius: 6px; box-shadow: 0 1px 0 oklch(85% 0.012 140 / 0.6); transition: box-shadow 220ms cubic-bezier(0.25,1,0.5,1); } .ds-input-textarea:focus { outline: none; box-shadow: 0 0 0 2px oklch(95% 0.008 145), 0 0 0 4px oklch(64% 0.14 85); }"
+    },
+    {
+      "name": "Dashboard List Row",
+      "kind": "card",
+      "refersTo": "list-row",
+      "description": "One doc in the operator's recent list. Title (sans, semibold) + date (mono, tabular nums). No kind chrome.",
+      "html": "<li class=\"ds-list-row\"><span class=\"ds-list-row__title\">Notes on the patch endpoint</span><span class=\"ds-list-row__date\">Apr 27, 2026</span></li>",
+      "css": ".ds-list-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; padding: 11px 14px; background: oklch(92% 0.012 140); border: 1px solid oklch(85% 0.012 140); border-radius: 4px; align-items: baseline; cursor: pointer; transition: background 120ms cubic-bezier(0.25,1,0.5,1); list-style: none; } .ds-list-row:hover { background: oklch(89% 0.014 140); } .ds-list-row__title { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(24% 0.014 240); } .ds-list-row__date { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; color: oklch(48% 0.018 200); font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; white-space: nowrap; }"
+    },
+    {
+      "name": "Code Block (Signature)",
+      "kind": "custom",
+      "refersTo": "code-block",
+      "description": "The signature component. 2px ochre leading rule on the left edge. Shiki renders syntax tokens; brand contributes only the container chrome.",
+      "html": "<figure class=\"ds-code\"><pre class=\"ds-code__pre\"><code>const slug = await uploadDoc(content);\nreturn { viewUrl: `/v/${slug}` };</code></pre></figure>",
+      "css": ".ds-code { background: oklch(92% 0.012 140); border-left: 2px solid oklch(64% 0.14 85); border-radius: 0 6px 6px 0; overflow: hidden; margin: 24px 0; } .ds-code__pre { margin: 0; padding: 16px 20px; overflow-x: auto; font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; font-size: 0.875rem; line-height: 1.6; color: oklch(24% 0.014 240); } .ds-code__pre code { background: transparent; padding: 0; font-family: inherit; font-size: inherit; color: inherit; } .ds-code ::selection { background: oklch(64% 0.14 85 / 0.22); color: inherit; }"
+    },
+    {
+      "name": "Search Bar (Operator Topbar)",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Operator dashboard top row. Click opens the cmd-palette. ⌘K kbd indicator on the right.",
+      "html": "<div class=\"ds-search\"><svg class=\"ds-search__icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"M21 21l-4.35-4.35\"/></svg><input class=\"ds-search__input\" placeholder=\"Search docs, settings, actions…\" /><span class=\"ds-search__kbd\">⌘ K</span></div>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: oklch(92% 0.012 140); border: 1px solid oklch(85% 0.012 140); border-radius: 8px; cursor: text; } .ds-search__icon { color: oklch(48% 0.018 200); flex-shrink: 0; } .ds-search__input { flex: 1; background: transparent; border: none; outline: none; font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; color: oklch(24% 0.014 240); } .ds-search__input::placeholder { color: oklch(48% 0.018 200); opacity: 0.7; } .ds-search__kbd { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; font-size: 0.6875rem; padding: 3px 6px; border: 1px solid oklch(85% 0.012 140); border-radius: 4px; color: oklch(48% 0.018 200); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Printer's Mark",
+    "overview": "md is a share tool. Recipients land on a /v/<slug> link cold — usually from a DM or chat — read the doc, and close the tab. The interface gets out of their way. A small watermark in the corner of every surface names the publisher (md) without claiming the page; clicking it reveals a tooltip with the few actions the reader needs (raw view, copy link, width toggle). The doc dominates; md is the bug in the corner that says 'this came from a place that cares about typography.' The system rejects four neighbors that share its zip code: SaaS landing-page tropes, Notion / Medium clones, over-designed personal portfolios, and the generic dev-tool category reflex. The Linear / Raycast lane is borrowed for discipline — restraint, scale-driven hierarchy, mono micro-type — not for its palette. Both themes get equal craft; light is fog cream, dark is dark fog with paper-warm fg, asymmetric rather than inverted.",
+    "keyCharacteristics": [
+      "Single-family sans (Inter Tight, weight-driven) for everything; mono (Geist Mono) only for code and chrome micro-type.",
+      "Tinted neutrals never #fff or #000 or zero-chroma; warm fog cream + ink in light, dark fog + paper-warm fg in dark.",
+      "One accent color, ochre, used on ≤ 5% of any screen: focus, link-on-hover, code-block leading rule, watermark glyph, selection.",
+      "Tactile flat: depth via tonal layering and stateful shadows; no decorative shadows, no glassmorphism.",
+      "The watermark is the universal nav. 32px corner glyph, click-to-reveal tooltip, W1 underline-draw on hover.",
+      "Cmd-palette (⌘K) is the eventual nav-at-scale; the watermark tooltip absorbs operator nav until it ships."
+    ],
+    "rules": [
+      { "name": "The Watermark Color Rule", "body": "Ochre is the only saturated color. ≤ 5% of any rendered surface. If a design wants color to do work, the answer is type weight + tonal layering, not a second accent.", "section": "colors" },
+      { "name": "The No-Pure-Black-Or-White Rule", "body": "Never #000, #fff, or zero-chroma neutrals. Every neutral tinted toward warm hue 140–220.", "section": "colors" },
+      { "name": "The Asymmetric Theme Rule", "body": "Light and dark are separate designed atmospheres, not inverted neutrals.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "One sans (Inter Tight) carries display through body. Mono (Geist Mono) is reserved for code and chrome micro-type.", "section": "typography" },
+      { "name": "The 1.4-Ratio Rule", "body": "Step ratio between hierarchy levels ≥ 1.25, with display ≥ 1.4 above headline.", "section": "typography" },
+      { "name": "The Tabular-Numerals Rule", "body": "Dates, byte counts, slug fragments use font-variant-numeric: tabular-nums.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows reserved for input tactility, button press, focus, and floating-overlay softness.", "section": "elevation" },
+      { "name": "The Focus-Has-Color Rule", "body": "Focus is the only chrome state where the ochre accent appears at rest.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Inter Tight across display, headline, title, body, label.",
+      "Do reserve mono (Geist Mono) for code and chrome micro-type. Tabular numerics on every numeric column.",
+      "Do use OKLCH for every color value. Tint every neutral toward warm hue 140–220.",
+      "Do reserve ochre for focus, link-on-hover, code-block leading rule, watermark glyph, selection. ≤ 5% of any surface.",
+      "Do treat light and dark as separate designed atmospheres.",
+      "Do make the code block a signature: ochre leading rule, paper-warm ground, careful padding.",
+      "Do vary spacing between dashboard, view page, settings, and forms.",
+      "Do lead each section with real weight contrast (H1 700 ≥ 1.4× H2 600).",
+      "Do put aria-label on every icon-only button. Focus-ring clears all surfaces in both themes."
+    ],
+    "donts": [
+      "Don't use Inter, Geist Sans, or any Vercel-stack default font.",
+      "Don't use zinc-50/100/900/950 in new code.",
+      "Don't use SaaS landing-page tropes (hero-metric, gradient accents, identical card grids, glassmorphism).",
+      "Don't use Notion / Medium clone signals (big serif H1, blockquote-heavy stylings, narrow capsule chrome).",
+      "Don't use over-designed personal portfolio tells (gradient text, scroll-jacking, mouse-trail effects).",
+      "Don't use border-left / border-right > 1px as a colored stripe (one exception: 2px ochre code-block leading rule).",
+      "Don't use scale() / bounce / elastic easing.",
+      "Don't nest cards inside cards. Don't wrap every section in a container.",
+      "Don't add a second accent color.",
+      "Don't use em dashes in UI copy. No --.",
+      "Don't change a button's border on focus; the focus-ring carries the state.",
+      "Don't animate layout properties; transform / opacity only.",
+      "Don't show a header on the unauthed /v/<slug> reader page.",
+      "Don't show kind in chrome.",
+      "Don't override Shiki syntax token colors with brand colors."
+    ]
+  }
+}

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter_Tight, Geist_Mono } from "next/font/google";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
-import { Toaster } from "sonner";
+import { DevThemeSwitcher } from "@/components/dev-theme-switcher";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
   subsets: ["latin"],
 });
 
@@ -27,11 +27,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${interTight.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var w=localStorage.getItem('md.width');if(w==='wide')document.documentElement.setAttribute('data-width','wide');var o=localStorage.getItem('md.outline.shown');if(o==='false')document.documentElement.setAttribute('data-outline-hidden','1');var t=localStorage.getItem('md.dev-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-dev-theme',t);}var ua=navigator.userAgent||'';var p=(navigator.userAgentData&&navigator.userAgentData.platform)||'';if(/Mac|iPhone|iPad/.test(ua)||/macOS|iOS/.test(p))document.documentElement.setAttribute('data-platform','mac');}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-paper text-ink">
         <AuthKitProvider>{children}</AuthKitProvider>
-        <Toaster richColors position="top-center" />
+        {process.env.NODE_ENV === "development" && <DevThemeSwitcher />}
       </body>
     </html>
   );

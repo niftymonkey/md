@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { Watermark } from "./watermark";
 
 const MAX_BYTES = 1024 * 1024;
 
@@ -10,38 +10,84 @@ type Props = {
   slug: string;
   initialContent: string;
   initialTitle: string;
-  initialKind: string | null;
+  signOutAction?: () => Promise<void>;
 };
 
-export function EditForm({ slug, initialContent, initialTitle, initialKind }: Props) {
+function macKey(k: string): string {
+  if (k === "mod") return "⌘";
+  if (k.length === 1) return k.toUpperCase();
+  return k;
+}
+
+function otherKey(k: string): string {
+  if (k === "mod") return "Ctrl";
+  if (k.length === 1) return k.toUpperCase();
+  return k;
+}
+
+function Kbd({ keys }: { keys: string[] }) {
+  return (
+    <>
+      <span data-key-mac className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd
+            key={i}
+            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+          >
+            {macKey(k)}
+          </kbd>
+        ))}
+      </span>
+      <span data-key-other className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd
+            key={i}
+            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+          >
+            {otherKey(k)}
+          </kbd>
+        ))}
+      </span>
+    </>
+  );
+}
+
+export function EditForm({
+  slug,
+  initialContent,
+  initialTitle,
+  signOutAction,
+}: Props) {
   const [content, setContent] = useState(initialContent);
   const [title, setTitle] = useState(initialTitle);
-  const [kind, setKind] = useState(initialKind ?? "");
-  const [isPending, startTransition] = useTransition();
+  const [savedContent, setSavedContent] = useState(initialContent);
+  const [savedTitle, setSavedTitle] = useState(initialTitle);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const router = useRouter();
 
-  const dirty =
-    content !== initialContent ||
-    title !== initialTitle ||
-    kind !== (initialKind ?? "");
+  const dirty = content !== savedContent || title !== savedTitle;
 
   async function save() {
+    if (saving) return;
+    setError(null);
     if (!content.trim()) {
-      toast.error("Content is empty");
+      setError("Content is empty");
       return;
     }
     if (new Blob([content]).size > MAX_BYTES) {
-      toast.error("Content exceeds 1MB limit");
+      setError("Content exceeds 1MB limit");
       return;
     }
+    if (!dirty) return;
 
-    const payload: { content?: string; title?: string | null; kind?: string | null } = {};
-    if (content !== initialContent) payload.content = content;
-    if (title !== initialTitle) payload.title = title.trim() || null;
-    if (kind !== (initialKind ?? "")) payload.kind = kind.trim() || null;
+    const normalizedTitle = title.trim();
+    const payload: { content?: string; title?: string | null } = {};
+    if (content !== savedContent) payload.content = content;
+    if (title !== savedTitle) payload.title = normalizedTitle || null;
 
-    if (Object.keys(payload).length === 0) return;
-
+    setSaving(true);
     let response: Response;
     try {
       response = await fetch(`/api/docs/${slug}`, {
@@ -50,7 +96,8 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
         body: JSON.stringify(payload),
       });
     } catch {
-      toast.error("Network error");
+      setError("Network error");
+      setSaving(false);
       return;
     }
 
@@ -62,58 +109,124 @@ export function EditForm({ slug, initialContent, initialTitle, initialKind }: Pr
       } catch {
         // ignore JSON parse failure
       }
-      toast.error(message);
+      setError(message);
+      setSaving(false);
       return;
     }
 
-    startTransition(() => {
-      router.push(`/v/${slug}`);
-    });
+    setSavedContent(content);
+    setSavedTitle(normalizedTitle);
+    setTitle(normalizedTitle);
+    setSaving(false);
+    setJustSaved(true);
+    window.setTimeout(() => setJustSaved(false), 1500);
+  }
+
+  function cancel() {
+    if (dirty && !window.confirm("Discard unsaved changes?")) return;
+    router.push(`/v/${slug}`);
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        void save();
+        return;
+      }
+      if (e.key === "Escape") {
+        if (document.querySelector('[data-watermark-open="true"]')) return;
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") {
+          (target as HTMLInputElement | HTMLTextAreaElement).blur();
+          return;
+        }
+        cancel();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, title, dirty, saving]);
+
+  let statusLabel: string;
+  let statusClass: string;
+  if (saving) {
+    statusLabel = "saving…";
+    statusClass = "text-muted";
+  } else if (justSaved) {
+    statusLabel = "saved";
+    statusClass = "saved-pulse text-ochre";
+  } else if (dirty) {
+    statusLabel = "unsaved changes";
+    statusClass = "text-ochre";
+  } else {
+    statusLabel = "no changes";
+    statusClass = "text-muted";
   }
 
   return (
     <div className="space-y-4">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title (clear to re-derive from first heading)"
-        aria-label="Title"
-        className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
-      />
-      <input
-        type="text"
-        value={kind}
-        onChange={(e) => setKind(e.target.value)}
-        placeholder="Kind (optional, e.g. note, rep, synthesis)"
-        aria-label="Kind (optional)"
-        className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
-      />
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Untitled"
+          aria-label="Title"
+          className="block h-11 flex-1 rounded-md border border-border bg-paper-warm px-3.5 text-base font-semibold tracking-[-0.01em] placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
+        />
+        <Watermark
+          variant="editor"
+          size="lg"
+          rawHref={`/api/raw/${slug}`}
+          dashboardHref="/"
+          signOutAction={signOutAction}
+          pulse={justSaved}
+          onSave={() => void save()}
+          onCancel={cancel}
+        />
+      </div>
       <textarea
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={20}
+        onChange={(e) => {
+          setContent(e.target.value);
+          if (error) setError(null);
+        }}
+        rows={24}
         spellCheck={false}
         aria-label="Markdown content"
-        className="block w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-500"
+        className="block w-full resize-y rounded-md border border-border bg-paper-warm px-3.5 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ochre"
       />
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={isPending || !content.trim() || !dirty}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+      <div className="flex items-center justify-between gap-3">
+        <span
+          key={statusLabel}
+          className={`text-[0.6875rem] font-semibold uppercase tracking-[0.12em] ${statusClass}`}
         >
-          {isPending ? "Saving…" : "Save"}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-        >
-          Cancel
-        </button>
+          {statusLabel}
+        </span>
+        <span className="flex items-center gap-3">
+          <KbdHint keys={["mod", "S"]} label="save" />
+          <KbdHint keys={["Esc"]} label="cancel" />
+        </span>
       </div>
+      {error && (
+        <p className="text-sm text-ochre" role="alert">
+          {error}
+        </p>
+      )}
     </div>
+  );
+}
+
+function KbdHint({ keys, label }: { keys: string[]; label: ReactNode }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <Kbd keys={keys} />
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
+        {label}
+      </span>
+    </span>
   );
 }
