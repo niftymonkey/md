@@ -23,6 +23,7 @@ export function UploadForm({
   const [title, setTitle] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -66,6 +67,7 @@ export function UploadForm({
   }
 
   async function submit() {
+    if (submitting) return;
     setError(null);
     if (!content.trim()) {
       setError("Content is empty");
@@ -79,6 +81,7 @@ export function UploadForm({
     const payload: { content: string; title?: string } = { content };
     if (title.trim()) payload.title = title.trim();
 
+    setSubmitting(true);
     let response: Response;
     try {
       response = await fetch("/api/upload", {
@@ -88,6 +91,7 @@ export function UploadForm({
       });
     } catch {
       setError("Network error");
+      setSubmitting(false);
       return;
     }
 
@@ -100,6 +104,7 @@ export function UploadForm({
         // ignore JSON parse failure; keep status-based message
       }
       setError(message);
+      setSubmitting(false);
       return;
     }
 
@@ -169,10 +174,10 @@ export function UploadForm({
         <button
           type="button"
           onClick={submit}
-          disabled={isPending || !content.trim()}
+          disabled={submitting || isPending || !content.trim()}
           className="cursor-pointer rounded-md bg-ink px-[18px] py-[9px] text-sm font-semibold text-paper transition-colors hover:bg-ochre-deep disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPending ? "Publishing…" : "Publish"}
+          {submitting || isPending ? "Publishing…" : "Publish"}
         </button>
         <input
           ref={fileInputRef}

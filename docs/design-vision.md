@@ -1,5 +1,7 @@
 # Direction: The Watermark (Printer's Mark, variant β)
 
+> **Status: ARCHIVED.** This brief captures the *original* direction proposal — pre-ship, before the Fog + Ochre palette was locked. Specifics here (teal, JetBrains Mono, 28px watermark, kind-filter chip row, separate `/all` page, `og:image` v1) have been superseded. The canonical visual spec is `DESIGN.md` + `DESIGN.json` (Fog + Ochre, Geist Mono, 32px watermark, tagging/search/og:image deferred to their own issues). Read this for the philosophical center; defer to the spec for any concrete value.
+
 **Center:** md is a printer's mark, made *persistent and small* rather than tucked at the end. A fixed corner glyph that says "this is published by md" without taking screen space — the way old letterheads placed a monogram in the corner of every page.
 
 ## The structural decisions

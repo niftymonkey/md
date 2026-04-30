@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useIsMac } from "@/lib/use-is-mac";
 
-function renderKey(k: string, isMac: boolean): string {
-  if (k === "mod") return isMac ? "⌘" : "Ctrl";
-  if (k === "shift") return isMac ? "⇧" : "Shift";
-  if (k === "alt") return isMac ? "⌥" : "Alt";
+function macKey(k: string): string {
+  if (k === "mod") return "⌘";
+  if (k === "shift") return "⇧";
+  if (k === "alt") return "⌥";
+  if (k.length === 1) return k.toUpperCase();
+  return k;
+}
+
+function otherKey(k: string): string {
+  if (k === "mod") return "Ctrl";
+  if (k === "shift") return "Shift";
+  if (k === "alt") return "Alt";
   if (k.length === 1) return k.toUpperCase();
   return k;
 }
@@ -70,11 +77,16 @@ export function Watermark({
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative inline-block">
+    <div
+      ref={containerRef}
+      className="relative inline-block"
+      data-watermark-open={open ? "true" : undefined}
+    >
       <button
         type="button"
         aria-label="md.niftymonkey.dev menu"
         title="md.niftymonkey.dev menu"
+        aria-haspopup="true"
         aria-expanded={open}
         data-pulse={pulse ? "true" : undefined}
         onClick={() => setOpen((v) => !v)}
@@ -119,7 +131,6 @@ function Menu({
 
   return (
     <div
-      role="menu"
       className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-[280px] rounded-lg border border-border bg-paper p-2.5 shadow-[var(--shadow-soft)]"
     >
       {variant === "reader" && (
@@ -168,10 +179,16 @@ function ReaderRows({
   const [copied, setCopied] = useState(false);
   function copyLink() {
     if (typeof window === "undefined") return;
-    void navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    });
+    if (!navigator.clipboard?.writeText) return;
+    void navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {
+        // clipboard denied; silent — user can grab URL from address bar
+      });
   }
   return (
     <>
@@ -255,7 +272,6 @@ function RowSoon({
 }) {
   return (
     <div
-      role="menuitem"
       aria-disabled
       className="flex w-full cursor-not-allowed items-center justify-between gap-3 rounded-md px-2 py-[7px] text-sm text-muted"
     >
@@ -395,7 +411,6 @@ function RowLink({
   return (
     <a
       href={href}
-      role="menuitem"
       className="flex items-center justify-between gap-3 rounded-md px-2 py-[7px] text-sm text-ink transition-colors hover:bg-paper-warm"
     >
       <span className="flex items-center gap-2">
@@ -428,7 +443,6 @@ function RowButton({
     <button
       type="button"
       onClick={onClick}
-      role="menuitem"
       className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-[7px] text-left text-sm text-ink transition-colors hover:bg-paper-warm"
     >
       <span className="flex items-center gap-2">
@@ -445,18 +459,29 @@ function RowButton({
 }
 
 function Kbd({ keys }: { keys: string[] }) {
-  const isMac = useIsMac();
   return (
-    <span className="flex items-center gap-1">
-      {keys.map((k, i) => (
-        <kbd
-          key={i}
-          className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
-        >
-          {renderKey(k, isMac)}
-        </kbd>
-      ))}
-    </span>
+    <>
+      <span data-key-mac className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd
+            key={i}
+            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+          >
+            {macKey(k)}
+          </kbd>
+        ))}
+      </span>
+      <span data-key-other className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd
+            key={i}
+            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+          >
+            {otherKey(k)}
+          </kbd>
+        ))}
+      </span>
+    </>
   );
 }
 

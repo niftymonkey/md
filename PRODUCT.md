@@ -45,4 +45,4 @@ Sharp, technical, dry.
 - `prefers-reduced-motion` respected by default. Never animate critical content; transitions only on hover, focus, and disclosure states.
 - Focus rings legible against every surface, both themes.
 - Code-block syntax highlighting (Shiki `github-light` / `github-dark`) must stay readable for protan/deutan/tritan vision. Verify on palette changes.
-- Header sticky behavior must not trap keyboard focus or break "skip to content" flows when added.
+- Sticky elements (the reader outline rail header today; any future sticky chrome) must not trap keyboard focus or break "skip to content" flows.

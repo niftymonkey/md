@@ -23,8 +23,28 @@
   display: none;
 }
 
-:root:not([data-outline-hidden]) [data-outline-toggle-cluster] {
+@media (min-width: 1100px) {
+  :root:not([data-outline-hidden]) [data-outline-toggle-cluster] {
+    display: none;
+  }
+}
+
+:root[data-platform="mac"] [data-key-other],
+:root:not([data-platform="mac"]) [data-key-mac] {
   display: none;
+}
+
+.dev-theme-switcher button {
+  color: var(--muted);
+}
+.dev-theme-switcher button:hover {
+  color: var(--ink);
+}
+:root:not([data-dev-theme]) .dev-theme-switcher button[data-mode="system"],
+:root[data-dev-theme="light"] .dev-theme-switcher button[data-mode="light"],
+:root[data-dev-theme="dark"] .dev-theme-switcher button[data-mode="dark"] {
+  background: var(--ochre);
+  color: var(--paper);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -80,8 +100,7 @@ body {
   color: var(--ink);
 }
 
-button:not(:disabled),
-[role="menuitem"]:not([aria-disabled="true"]) {
+button:not(:disabled) {
   cursor: pointer;
 }
 
@@ -185,11 +204,17 @@ button:not(:disabled),
 }
 
 @media (prefers-color-scheme: dark) {
-  .shiki,
-  .shiki span {
+  :root:not([data-theme="light"]) .shiki,
+  :root:not([data-theme="light"]) .shiki span {
     background-color: var(--shiki-dark-bg) !important;
     color: var(--shiki-dark) !important;
   }
+}
+
+:root[data-theme="dark"] .shiki,
+:root[data-theme="dark"] .shiki span {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
 }
 
 .shiki {

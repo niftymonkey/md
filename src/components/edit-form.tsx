@@ -3,7 +3,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Watermark } from "./watermark";
-import { useIsMac } from "@/lib/use-is-mac";
 
 const MAX_BYTES = 1024 * 1024;
 
@@ -14,25 +13,42 @@ type Props = {
   signOutAction?: () => Promise<void>;
 };
 
-function renderKey(k: string, isMac: boolean): string {
-  if (k === "mod") return isMac ? "⌘" : "Ctrl";
+function macKey(k: string): string {
+  if (k === "mod") return "⌘";
+  if (k.length === 1) return k.toUpperCase();
+  return k;
+}
+
+function otherKey(k: string): string {
+  if (k === "mod") return "Ctrl";
   if (k.length === 1) return k.toUpperCase();
   return k;
 }
 
 function Kbd({ keys }: { keys: string[] }) {
-  const isMac = useIsMac();
   return (
-    <span className="flex items-center gap-1">
-      {keys.map((k, i) => (
-        <kbd
-          key={i}
-          className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
-        >
-          {renderKey(k, isMac)}
-        </kbd>
-      ))}
-    </span>
+    <>
+      <span data-key-mac className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd
+            key={i}
+            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+          >
+            {macKey(k)}
+          </kbd>
+        ))}
+      </span>
+      <span data-key-other className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd
+            key={i}
+            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
+          >
+            {otherKey(k)}
+          </kbd>
+        ))}
+      </span>
+    </>
   );
 }
 
@@ -66,9 +82,10 @@ export function EditForm({
     }
     if (!dirty) return;
 
+    const normalizedTitle = title.trim();
     const payload: { content?: string; title?: string | null } = {};
     if (content !== savedContent) payload.content = content;
-    if (title !== savedTitle) payload.title = title.trim() || null;
+    if (title !== savedTitle) payload.title = normalizedTitle || null;
 
     setSaving(true);
     let response: Response;
@@ -98,7 +115,8 @@ export function EditForm({
     }
 
     setSavedContent(content);
-    setSavedTitle(title);
+    setSavedTitle(normalizedTitle);
+    setTitle(normalizedTitle);
     setSaving(false);
     setJustSaved(true);
     window.setTimeout(() => setJustSaved(false), 1500);
@@ -117,6 +135,7 @@ export function EditForm({
         return;
       }
       if (e.key === "Escape") {
+        if (document.querySelector('[data-watermark-open="true"]')) return;
         const target = e.target as HTMLElement | null;
         const tag = target?.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA") {

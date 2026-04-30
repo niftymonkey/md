@@ -15,20 +15,30 @@ export function OutlineRail({ headings }: { headings: Heading[] }) {
       .filter((el): el is HTMLElement => el !== null);
     if (targets.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .map((e) => e.target as HTMLElement)
-          .sort(
-            (a, b) =>
-              a.getBoundingClientRect().top - b.getBoundingClientRect().top,
-          );
-        if (visible.length > 0) setActiveId(visible[0].id);
-      },
-      { rootMargin: "0px 0px -70% 0px", threshold: 0 },
-    );
+    function pickActive() {
+      const measured = targets.map((el) => ({
+        el,
+        top: el.getBoundingClientRect().top,
+      }));
+      const upcoming = measured
+        .filter((m) => m.top >= 0)
+        .sort((a, b) => a.top - b.top)[0];
+      if (upcoming) {
+        setActiveId(upcoming.el.id);
+        return;
+      }
+      const lastPassed = measured
+        .filter((m) => m.top < 0)
+        .sort((a, b) => b.top - a.top)[0];
+      if (lastPassed) setActiveId(lastPassed.el.id);
+    }
+
+    const observer = new IntersectionObserver(() => pickActive(), {
+      rootMargin: "0px 0px -70% 0px",
+      threshold: 0,
+    });
     targets.forEach((el) => observer.observe(el));
+    pickActive();
     return () => observer.disconnect();
   }, [headings]);
 

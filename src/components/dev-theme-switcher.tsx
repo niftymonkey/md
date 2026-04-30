@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 type Mode = "system" | "light" | "dark";
 const MODES = ["system", "light", "dark"] as const;
 const STORAGE_KEY = "md.dev-theme";
+
+function isMode(value: string): value is Mode {
+  return (MODES as readonly string[]).includes(value);
+}
 
 function apply(mode: Mode) {
   const root = document.documentElement;
   root.classList.add("theme-changing");
   if (mode === "system") {
     root.removeAttribute("data-theme");
+    root.removeAttribute("data-dev-theme");
   } else {
     root.setAttribute("data-theme", mode);
+    root.setAttribute("data-dev-theme", mode);
   }
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -22,32 +28,26 @@ function apply(mode: Mode) {
 }
 
 export function DevThemeSwitcher() {
-  const [mode, setMode] = useState<Mode>("system");
-
   useEffect(() => {
-    const saved = (localStorage.getItem(STORAGE_KEY) as Mode | null) ?? "system";
-    setMode(saved);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const saved: Mode = raw && isMode(raw) ? raw : "system";
     apply(saved);
   }, []);
 
   function pick(next: Mode) {
     localStorage.setItem(STORAGE_KEY, next);
-    setMode(next);
     apply(next);
   }
 
   return (
-    <div className="fixed bottom-3 left-3 z-[100] flex gap-1 rounded-md border border-border bg-paper p-1 font-mono text-[0.6875rem] shadow-[var(--shadow-soft)]">
+    <div className="dev-theme-switcher fixed bottom-3 left-3 z-[100] flex gap-1 rounded-md border border-border bg-paper p-1 font-mono text-[0.6875rem] shadow-[var(--shadow-soft)]">
       {MODES.map((m) => (
         <button
           key={m}
           type="button"
+          data-mode={m}
           onClick={() => pick(m)}
-          className={
-            mode === m
-              ? "cursor-pointer rounded px-2 py-1 bg-ochre text-paper"
-              : "cursor-pointer rounded px-2 py-1 text-muted hover:text-ink"
-          }
+          className="cursor-pointer rounded px-2 py-1"
         >
           {m}
         </button>
