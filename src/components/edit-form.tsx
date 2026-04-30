@@ -11,7 +11,6 @@ type Props = {
   slug: string;
   initialContent: string;
   initialTitle: string;
-  initialKind: string | null;
   signOutAction?: () => Promise<void>;
 };
 
@@ -41,22 +40,18 @@ export function EditForm({
   slug,
   initialContent,
   initialTitle,
-  initialKind,
   signOutAction,
 }: Props) {
   const [content, setContent] = useState(initialContent);
   const [title, setTitle] = useState(initialTitle);
-  const [kind, setKind] = useState(initialKind ?? "");
   const [savedContent, setSavedContent] = useState(initialContent);
   const [savedTitle, setSavedTitle] = useState(initialTitle);
-  const [savedKind, setSavedKind] = useState(initialKind ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const router = useRouter();
 
-  const dirty =
-    content !== savedContent || title !== savedTitle || kind !== savedKind;
+  const dirty = content !== savedContent || title !== savedTitle;
 
   async function save() {
     if (saving) return;
@@ -71,10 +66,9 @@ export function EditForm({
     }
     if (!dirty) return;
 
-    const payload: { content?: string; title?: string | null; kind?: string | null } = {};
+    const payload: { content?: string; title?: string | null } = {};
     if (content !== savedContent) payload.content = content;
     if (title !== savedTitle) payload.title = title.trim() || null;
-    if (kind !== savedKind) payload.kind = kind.trim() || null;
 
     setSaving(true);
     let response: Response;
@@ -105,7 +99,6 @@ export function EditForm({
 
     setSavedContent(content);
     setSavedTitle(title);
-    setSavedKind(kind);
     setSaving(false);
     setJustSaved(true);
     window.setTimeout(() => setJustSaved(false), 1500);
@@ -136,7 +129,7 @@ export function EditForm({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, title, kind, dirty, saving]);
+  }, [content, title, dirty, saving]);
 
   let statusLabel: string;
   let statusClass: string;
@@ -164,14 +157,6 @@ export function EditForm({
           placeholder="Untitled"
           aria-label="Title"
           className="block h-11 flex-1 rounded-md border border-border bg-paper-warm px-3.5 text-base font-semibold tracking-[-0.01em] placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
-        />
-        <input
-          type="text"
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
-          placeholder="KIND (optional)"
-          aria-label="Kind"
-          className="block h-11 w-44 rounded-md border border-border bg-paper-warm px-3 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ochre placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-ochre"
         />
         <Watermark
           variant="editor"

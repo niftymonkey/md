@@ -33,7 +33,6 @@ export default async function EditPage({ params }: PageProps) {
         slug={doc.slug}
         initialContent={doc.content}
         initialTitle={doc.title}
-        initialKind={doc.kind}
         signOutAction={signOutAction}
       />
     </main>

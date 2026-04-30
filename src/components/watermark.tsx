@@ -226,7 +226,7 @@ function OperatorRows({
 }) {
   return (
     <>
-      <Group label="operator">
+      <Group>
         <RowSoon icon={<CommandIcon />} kbd={["mod", "K"]}>
           command palette
         </RowSoon>
