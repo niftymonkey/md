@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const PALETTE_OPEN_EVENT = "md:cmd-palette:open";
 const SEARCH_DEBOUNCE_MS = 120;
@@ -37,7 +37,14 @@ export function CmdPalette({ signOutAction }: Props) {
   const [docsLoading, setDocsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navRef = useRef<{ totalRows: number; safeIndex: number; pick: (i: number) => void; close: () => void }>({
+    totalRows: 0,
+    safeIndex: 0,
+    pick: () => {},
+    close: () => {},
+  });
   const router = useRouter();
+  const pathname = usePathname() ?? "/";
 
   function close() {
     setQuery("");
@@ -72,6 +79,60 @@ export function CmdPalette({ signOutAction }: Props) {
       window.removeEventListener(PALETTE_OPEN_EVENT, onOpen);
     };
   }, []);
+
+  useEffect(() => {
+    let waiting = false;
+    let timer: number | null = null;
+    function reset() {
+      waiting = false;
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        reset();
+        return;
+      }
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        target?.isContentEditable
+      ) {
+        reset();
+        return;
+      }
+      if (document.documentElement.dataset.cmdPaletteOpen === "true") {
+        reset();
+        return;
+      }
+      if (document.querySelector('[data-watermark-open="true"]')) {
+        reset();
+        return;
+      }
+      if (waiting && (e.key === "d" || e.key === "D")) {
+        e.preventDefault();
+        reset();
+        if (window.location.pathname !== "/") router.push("/");
+        return;
+      }
+      if (e.key === "g" || e.key === "G") {
+        waiting = true;
+        if (timer !== null) window.clearTimeout(timer);
+        timer = window.setTimeout(reset, 1000);
+        return;
+      }
+      reset();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      reset();
+    };
+  }, [router]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,8 +171,30 @@ export function CmdPalette({ signOutAction }: Props) {
     };
   }, [open, query]);
 
-  const actions: ActionItem[] = [
-    {
+  const isDashboard = pathname === "/";
+  const isReader = pathname.startsWith("/v/");
+  const isEdit = pathname.startsWith("/edit/");
+  const isSettings = pathname === "/settings";
+  const docSlug =
+    isReader || isEdit ? decodeURIComponent(pathname.split("/")[2] ?? "") : "";
+
+  const actions: ActionItem[] = [];
+
+  if (!isDashboard) {
+    actions.push({
+      id: "go-dashboard",
+      title: "Back to dashboard",
+      icon: <BackIcon />,
+      kbd: ["g", "d"],
+      run: () => {
+        close();
+        router.push("/");
+      },
+    });
+  }
+
+  if (!isDashboard) {
+    actions.push({
       id: "new-document",
       title: "New document",
       icon: <NewIcon />,
@@ -119,8 +202,61 @@ export function CmdPalette({ signOutAction }: Props) {
         close();
         router.push("/");
       },
-    },
-    {
+    });
+  }
+
+  if (isReader && docSlug) {
+    actions.push({
+      id: "edit-doc",
+      title: "Edit this document",
+      icon: <EditIcon />,
+      run: () => {
+        close();
+        router.push(`/edit/${docSlug}`);
+      },
+    });
+  }
+
+  if (isEdit && docSlug) {
+    actions.push({
+      id: "view-doc",
+      title: "View this document",
+      icon: <DocIcon />,
+      run: () => {
+        close();
+        router.push(`/v/${docSlug}`);
+      },
+    });
+  }
+
+  if ((isReader || isEdit) && docSlug) {
+    actions.push({
+      id: "view-raw",
+      title: "View raw markdown",
+      icon: <RawIcon />,
+      run: () => {
+        close();
+        window.location.assign(`/api/raw/${docSlug}`);
+      },
+    });
+    actions.push({
+      id: "copy-link",
+      title: "Copy link to this document",
+      icon: <LinkIcon />,
+      run: async () => {
+        const url = `${window.location.origin}/v/${docSlug}`;
+        try {
+          await navigator.clipboard.writeText(url);
+        } catch {
+          // clipboard denied; silent
+        }
+        close();
+      },
+    });
+  }
+
+  if (!isSettings) {
+    actions.push({
       id: "open-settings",
       title: "Open settings",
       icon: <SettingsIcon />,
@@ -128,8 +264,8 @@ export function CmdPalette({ signOutAction }: Props) {
         close();
         router.push("/settings");
       },
-    },
-  ];
+    });
+  }
 
   if (signOutAction) {
     actions.push({
@@ -165,28 +301,40 @@ export function CmdPalette({ signOutAction }: Props) {
     void action.run();
   }
 
-  function onKey(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      close();
-      return;
+  useEffect(() => {
+    navRef.current = { totalRows, safeIndex, pick, close };
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      const { totalRows, safeIndex, pick, close } = navRef.current;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((i) =>
+          totalRows === 0 ? 0 : Math.min(totalRows - 1, i + 1),
+        );
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.max(0, i - 1));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        pick(safeIndex);
+        return;
+      }
     }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex((i) => (totalRows === 0 ? 0 : Math.min(totalRows - 1, i + 1)));
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex((i) => Math.max(0, i - 1));
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      pick(safeIndex);
-      return;
-    }
-  }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   if (!open) return null;
 
@@ -203,7 +351,6 @@ export function CmdPalette({ signOutAction }: Props) {
         aria-modal="true"
         aria-label="Command palette"
         className="cmd-palette flex w-full max-w-[560px] flex-col overflow-hidden rounded-lg border border-border bg-paper shadow-[var(--shadow-soft)]"
-        onKeyDown={onKey}
       >
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <span className="grid size-4 place-items-center text-muted">
@@ -264,7 +411,7 @@ export function CmdPalette({ signOutAction }: Props) {
             </>
           )}
         </div>
-        <div className="flex items-center justify-end gap-4 border-t border-border bg-paper-warm px-4 py-2">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 border-t border-border bg-paper-warm px-4 py-2">
           <FooterHint glyphs={["↑", "↓"]} label="navigate" />
           <FooterHint glyphs={["↵"]} label="open" />
           <FooterHint glyphs={["esc"]} label="close" />
@@ -308,7 +455,7 @@ function Row({
       onMouseEnter={onMouseEnter}
       onClick={onClick}
       data-selected={selected ? "true" : undefined}
-      className="cmd-palette-row flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm text-ink"
+      className="cmd-palette-row flex w-full items-center gap-3 px-2 py-2 text-left text-sm text-ink"
     >
       <span className="grid size-6 shrink-0 place-items-center text-muted">
         {icon}
@@ -415,6 +562,42 @@ function SignOutIcon() {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg {...strokeProps("size-3.5")}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
+
+function RawIcon() {
+  return (
+    <svg {...strokeProps("size-3.5")}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg {...strokeProps("size-3.5")}>
+      <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5" />
+      <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg {...strokeProps("size-3.5")}>
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
     </svg>
   );
 }

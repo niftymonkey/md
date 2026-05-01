@@ -5,7 +5,6 @@ import { UploadForm } from "@/components/upload-form";
 import { DocList } from "@/components/doc-list";
 import { Watermark } from "@/components/watermark";
 import { SearchBar } from "@/components/search-bar";
-import { CmdPalette } from "@/components/cmd-palette";
 
 async function signOutAction() {
   "use server";
@@ -55,7 +54,6 @@ export default async function Home() {
         </h2>
         <DocList ownerId={user.id} />
       </section>
-      <CmdPalette signOutAction={signOutAction} />
     </main>
   );
 }

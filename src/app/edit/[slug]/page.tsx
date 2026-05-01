@@ -3,7 +3,6 @@ import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import { EditForm } from "@/components/edit-form";
-import { CmdPalette } from "@/components/cmd-palette";
 
 async function signOutAction() {
   "use server";
@@ -36,7 +35,6 @@ export default async function EditPage({ params }: PageProps) {
         initialTitle={doc.title}
         signOutAction={signOutAction}
       />
-      <CmdPalette signOutAction={signOutAction} />
     </main>
   );
 }
