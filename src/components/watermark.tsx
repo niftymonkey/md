@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { openCmdPalette } from "./cmd-palette";
 
 function macKey(k: string): string {
   if (k === "mod") return "⌘";
@@ -136,7 +137,9 @@ function Menu({
       {variant === "reader" && (
         <ReaderRows rawHref={rawHref} width={width} onWidthChange={onWidthChange} />
       )}
-      {variant === "operator" && <OperatorRows signOutAction={signOutAction} />}
+      {variant === "operator" && (
+        <OperatorRows signOutAction={signOutAction} closeMenu={closeMenu} />
+      )}
       {variant === "editor" && (
         <EditorRows
           rawHref={rawHref}
@@ -145,7 +148,7 @@ function Menu({
           closeMenu={closeMenu}
         />
       )}
-      {variant === "settings" && <SettingsRows />}
+      {variant === "settings" && <SettingsRows closeMenu={closeMenu} />}
       {hasOperatorExtras && (
         <Group>
           {dashboardHref && (
@@ -238,15 +241,24 @@ function CopiedBadge() {
 
 function OperatorRows({
   signOutAction,
+  closeMenu,
 }: {
   signOutAction?: () => Promise<void>;
+  closeMenu: () => void;
 }) {
   return (
     <>
       <Group>
-        <RowSoon icon={<CommandIcon />} kbd={["mod", "K"]}>
+        <RowButton
+          icon={<CommandIcon />}
+          kbd={["mod", "K"]}
+          onClick={() => {
+            closeMenu();
+            openCmdPalette();
+          }}
+        >
           command palette
-        </RowSoon>
+        </RowButton>
         <RowLink href="/settings" icon={<SettingsIcon />}>
           settings
         </RowLink>
@@ -332,12 +344,19 @@ function EditorRows({
   );
 }
 
-function SettingsRows() {
+function SettingsRows({ closeMenu }: { closeMenu: () => void }) {
   return (
     <Group label="settings">
-      <RowSoon icon={<CommandIcon />} kbd={["mod", "K"]}>
+      <RowButton
+        icon={<CommandIcon />}
+        kbd={["mod", "K"]}
+        onClick={() => {
+          closeMenu();
+          openCmdPalette();
+        }}
+      >
         command palette
-      </RowSoon>
+      </RowButton>
       <RowLink href="/" icon={<BackIcon />}>
         back to dashboard
       </RowLink>

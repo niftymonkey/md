@@ -2,7 +2,6 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Watermark } from "./watermark";
 
 const MAX_BYTES = 1024 * 1024;
 const ACCEPTED_EXTENSIONS = [".md", ".markdown"];
@@ -14,11 +13,7 @@ function isAcceptedFile(file: File): boolean {
   return false;
 }
 
-export function UploadForm({
-  signOutAction,
-}: {
-  signOutAction?: () => Promise<void>;
-}) {
+export function UploadForm() {
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -121,16 +116,14 @@ export function UploadForm({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title (optional — defaults to first heading)"
-          className="block h-11 flex-1 rounded-md border border-border bg-paper-warm px-3.5 text-sm placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
-        />
-        <Watermark variant="operator" size="lg" signOutAction={signOutAction} />
-      </div>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title (optional — defaults to first heading)"
+        className="block h-11 w-full rounded-md border border-border bg-paper-warm px-3.5 text-sm placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
+      />
+
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}

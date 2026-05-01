@@ -136,6 +136,7 @@ export function EditForm({
       }
       if (e.key === "Escape") {
         if (document.querySelector('[data-watermark-open="true"]')) return;
+        if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
         const target = e.target as HTMLElement | null;
         const tag = target?.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA") {

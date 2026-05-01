@@ -3,6 +3,9 @@ import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { UploadForm } from "@/components/upload-form";
 import { DocList } from "@/components/doc-list";
+import { Watermark } from "@/components/watermark";
+import { SearchBar } from "@/components/search-bar";
+import { CmdPalette } from "@/components/cmd-palette";
 
 async function signOutAction() {
   "use server";
@@ -39,8 +42,12 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mb-6 flex items-center gap-3">
+        <SearchBar />
+        <Watermark variant="operator" size="lg" signOutAction={signOutAction} />
+      </div>
       <section className="mb-10">
-        <UploadForm signOutAction={signOutAction} />
+        <UploadForm />
       </section>
       <section className="space-y-3">
         <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
@@ -48,6 +55,7 @@ export default async function Home() {
         </h2>
         <DocList ownerId={user.id} />
       </section>
+      <CmdPalette signOutAction={signOutAction} />
     </main>
   );
 }

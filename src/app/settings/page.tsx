@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
-import { withAuth } from "@workos-inc/authkit-nextjs";
+import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { listTokensForOwner } from "@/lib/api-tokens";
 import { Watermark } from "@/components/watermark";
+import { CmdPalette } from "@/components/cmd-palette";
 import { TokensSection } from "./_components/tokens-section";
+
+async function signOutAction() {
+  "use server";
+  await signOut();
+}
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +55,7 @@ export default async function SettingsPage() {
           />
         </section>
       </div>
+      <CmdPalette signOutAction={signOutAction} />
     </main>
   );
 }
