@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const MAX_BYTES = 1024 * 1024;
@@ -21,33 +21,6 @@ function otherKey(k: string): string {
   if (k === "mod") return "Ctrl";
   if (k.length === 1) return k.toUpperCase();
   return k;
-}
-
-function Kbd({ keys }: { keys: string[] }) {
-  return (
-    <>
-      <span data-key-mac className="flex items-center gap-1">
-        {keys.map((k, i) => (
-          <kbd
-            key={i}
-            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
-          >
-            {macKey(k)}
-          </kbd>
-        ))}
-      </span>
-      <span data-key-other className="flex items-center gap-1">
-        {keys.map((k, i) => (
-          <kbd
-            key={i}
-            className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
-          >
-            {otherKey(k)}
-          </kbd>
-        ))}
-      </span>
-    </>
-  );
 }
 
 export function EditForm({
@@ -184,17 +157,38 @@ export function EditForm({
         aria-label="Markdown content"
         className="block w-full resize-y rounded-md border border-border bg-paper-warm px-3.5 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ochre"
       />
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span
           key={statusLabel}
           className={`text-[0.6875rem] font-semibold uppercase tracking-[0.12em] ${statusClass}`}
         >
           {statusLabel}
         </span>
-        <span className="flex items-center gap-3">
-          <KbdHint keys={["mod", "S"]} label="save" />
-          <KbdHint keys={["Esc"]} label="cancel" />
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <a
+            href={`/api/raw/${slug}`}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-paper px-3 py-1.5 text-[0.8125rem] font-semibold text-ink transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
+          >
+            View raw
+          </a>
+          <button
+            type="button"
+            onClick={cancel}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-paper px-3 py-1.5 text-[0.8125rem] font-semibold text-ink transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
+          >
+            Cancel
+            <KbdHintInline keys={["Esc"]} />
+          </button>
+          <button
+            type="button"
+            onClick={() => void save()}
+            disabled={saving || !dirty}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-ink bg-ink px-3 py-1.5 text-[0.8125rem] font-semibold text-paper transition-colors duration-150 hover:bg-ochre-deep hover:border-ochre-deep disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-ink disabled:hover:border-ink"
+          >
+            {saving ? "Saving…" : "Save"}
+            <KbdHintInline keys={["mod", "S"]} variant="primary" />
+          </button>
+        </div>
       </div>
       {error && (
         <p className="text-sm text-ochre" role="alert">
@@ -205,13 +199,34 @@ export function EditForm({
   );
 }
 
-function KbdHint({ keys, label }: { keys: string[]; label: ReactNode }) {
+function KbdHintInline({
+  keys,
+  variant = "ghost",
+}: {
+  keys: string[];
+  variant?: "ghost" | "primary";
+}) {
+  const ghostClass =
+    "rounded-[3px] border border-border bg-paper-warm/60 px-[5px] py-[1px] font-mono text-[0.625rem] font-medium text-muted";
+  const primaryClass =
+    "rounded-[3px] border border-paper/20 bg-paper/15 px-[5px] py-[1px] font-mono text-[0.625rem] font-medium text-paper/80";
+  const cls = variant === "primary" ? primaryClass : ghostClass;
   return (
-    <span className="flex items-center gap-1.5">
-      <Kbd keys={keys} />
-      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
-        {label}
+    <>
+      <span data-key-mac className="ml-1 inline-flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd key={i} className={cls}>
+            {macKey(k)}
+          </kbd>
+        ))}
       </span>
-    </span>
+      <span data-key-other className="ml-1 inline-flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd key={i} className={cls}>
+            {otherKey(k)}
+          </kbd>
+        ))}
+      </span>
+    </>
   );
 }
