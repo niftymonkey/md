@@ -5,6 +5,7 @@ export default authkitProxy();
 export const config = {
   matcher: [
     "/",
+    "/new",
     "/v/:slug*",
     "/edit/:slug*",
     "/settings",

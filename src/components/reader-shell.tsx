@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Watermark } from "./watermark";
+import { useRouter } from "next/navigation";
 import { OutlineRail } from "./outline-rail";
+import { ReaderToolbar } from "./reader-toolbar";
 import type { Heading } from "@/lib/heading-utils";
 
 type Width = "reading" | "wide";
@@ -11,22 +12,24 @@ const WIDTH_KEY = "md.width";
 const OUTLINE_KEY = "md.outline.shown";
 
 export function ReaderShell({
+  slug,
   rawHref,
   hasOutline,
   headings,
-  dashboardHref,
-  signOutAction,
+  isAuthed,
   children,
 }: {
+  slug: string;
   rawHref: string;
   hasOutline: boolean;
   headings: Heading[];
-  dashboardHref?: string;
-  signOutAction?: () => Promise<void>;
+  isAuthed: boolean;
   children: ReactNode;
 }) {
   const [width, setWidth] = useState<Width>("reading");
   const [outlineShown, setOutlineShown] = useState(hasOutline);
+  const router = useRouter();
+  const dashboardHref = isAuthed ? "/" : undefined;
 
   useEffect(() => {
     const w = localStorage.getItem(WIDTH_KEY) as Width | null;
@@ -58,9 +61,29 @@ export function ReaderShell({
   }
 
   useEffect(() => {
+    document.documentElement.setAttribute("data-scrolling", "1");
+    let timer = window.setTimeout(() => {
+      document.documentElement.removeAttribute("data-scrolling");
+    }, 1500);
+    function onScroll() {
+      document.documentElement.setAttribute("data-scrolling", "1");
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        document.documentElement.removeAttribute("data-scrolling");
+      }, 1500);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timer);
+      document.documentElement.removeAttribute("data-scrolling");
+    };
+  }, []);
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (document.querySelector('[data-watermark-open="true"]')) return;
+      if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
@@ -77,49 +100,19 @@ export function ReaderShell({
         case "o":
           toggleOutline();
           break;
+        case "e":
+          if (isAuthed) router.push(`/edit/${slug}`);
+          break;
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawHref, width, hasOutline]);
+  }, [rawHref, width, hasOutline, isAuthed, slug]);
 
   return (
-    <main className="relative mx-auto w-full px-6 py-10 min-[1100px]:flex min-[1100px]:justify-center min-[1100px]:gap-10">
-      <div className="relative mx-auto w-full max-w-[var(--md-article-max)] min-[1100px]:mx-0">
-        {hasOutline ? (
-          <div
-            data-outline-toggle-cluster
-            className="absolute -right-2 top-0 flex items-center gap-2 sm:-right-12"
-          >
-            <ToolbarIconButton
-              onClick={toggleOutline}
-              label="Show outline"
-              pressed={false}
-            >
-              <OutlineIcon />
-            </ToolbarIconButton>
-            <Watermark
-              variant="reader"
-              rawHref={rawHref}
-              width={width}
-              onWidthChange={pickWidth}
-              dashboardHref={dashboardHref}
-              signOutAction={signOutAction}
-            />
-          </div>
-        ) : (
-          <div className="absolute -right-2 top-0 sm:-right-12">
-            <Watermark
-              variant="reader"
-              rawHref={rawHref}
-              width={width}
-              onWidthChange={pickWidth}
-              dashboardHref={dashboardHref}
-              signOutAction={signOutAction}
-            />
-          </div>
-        )}
+    <main className="reader-main mx-auto flex w-full justify-center gap-6 px-6 py-10">
+      <div className="reader-article relative w-full min-w-0 max-w-[var(--md-article-max)]">
         <article className="prose max-w-none prose-pre:bg-transparent prose-pre:p-0">
           {children}
         </article>
@@ -127,65 +120,45 @@ export function ReaderShell({
       {hasOutline && (
         <aside
           data-outline-aside
-          className="hidden min-[1100px]:block min-[1100px]:w-60 min-[1100px]:shrink-0 min-[1100px]:sticky min-[1100px]:top-10 min-[1100px]:self-start"
+          className="hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
         >
-          <div className="flex items-center justify-between gap-2 pb-3 pt-1">
+          <div className="pb-3 pt-1.5">
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
               On this page
             </span>
-            <div className="flex items-center gap-2">
-              <ToolbarIconButton
-                onClick={toggleOutline}
-                label="Hide outline"
-                pressed={true}
-              >
-                <OutlineIcon />
-              </ToolbarIconButton>
-              <Watermark
-                variant="reader"
-                rawHref={rawHref}
-                width={width}
-                onWidthChange={pickWidth}
-                dashboardHref={dashboardHref}
-                signOutAction={signOutAction}
-              />
-            </div>
           </div>
-          <div className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1">
+          <div
+            data-outline-scroll
+            className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1"
+          >
             <OutlineRail headings={headings} />
           </div>
         </aside>
       )}
+      <div
+        data-reader-toolbar-cluster
+        className="hidden flex-col items-center gap-1.5 sm:sticky sm:top-14 sm:flex sm:shrink-0 sm:self-start"
+      >
+        {hasOutline && (
+          <button
+            type="button"
+            onClick={toggleOutline}
+            aria-label={outlineShown ? "Hide outline" : "Show outline"}
+            title={outlineShown ? "Hide outline" : "Show outline"}
+            aria-pressed={outlineShown}
+            className="grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre aria-pressed:border-ochre aria-pressed:bg-ochre aria-pressed:text-paper aria-pressed:hover:text-paper"
+          >
+            <OutlineIcon />
+          </button>
+        )}
+        <ReaderToolbar
+          width={width}
+          onWidthChange={pickWidth}
+          rawHref={rawHref}
+          dashboardHref={dashboardHref}
+        />
+      </div>
     </main>
-  );
-}
-
-function ToolbarIconButton({
-  onClick,
-  label,
-  pressed,
-  children,
-}: {
-  onClick: () => void;
-  label: string;
-  pressed?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      aria-pressed={pressed}
-      className={
-        pressed
-          ? "grid size-8 cursor-pointer place-items-center rounded-md border border-ochre bg-ochre text-paper transition-[border-color] duration-200"
-          : "grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-200 hover:border-ochre hover:text-ochre"
-      }
-    >
-      {children}
-    </button>
   );
 }
 

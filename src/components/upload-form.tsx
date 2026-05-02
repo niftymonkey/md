@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Watermark } from "./watermark";
+import { DROP_PRELOAD_EVENT, readDropPreload } from "./drop-anywhere";
 
 const MAX_BYTES = 1024 * 1024;
 const ACCEPTED_EXTENSIONS = [".md", ".markdown"];
@@ -14,11 +14,7 @@ function isAcceptedFile(file: File): boolean {
   return false;
 }
 
-export function UploadForm({
-  signOutAction,
-}: {
-  signOutAction?: () => Promise<void>;
-}) {
+export function UploadForm() {
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -27,6 +23,19 @@ export function UploadForm({
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    function applyPreload() {
+      const payload = readDropPreload();
+      if (!payload) return;
+      setContent(payload.content);
+      if (payload.title) setTitle(payload.title);
+      setError(null);
+    }
+    applyPreload();
+    window.addEventListener(DROP_PRELOAD_EVENT, applyPreload);
+    return () => window.removeEventListener(DROP_PRELOAD_EVENT, applyPreload);
+  }, []);
 
   async function readFileAsText(file: File): Promise<string> {
     if (!isAcceptedFile(file)) {
@@ -121,16 +130,14 @@ export function UploadForm({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title (optional — defaults to first heading)"
-          className="block h-11 flex-1 rounded-md border border-border bg-paper-warm px-3.5 text-sm placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
-        />
-        <Watermark variant="operator" size="lg" signOutAction={signOutAction} />
-      </div>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title (optional — defaults to first heading)"
+        className="block h-11 w-full rounded-md border border-border bg-paper-warm px-3.5 text-sm placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
+      />
+
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}

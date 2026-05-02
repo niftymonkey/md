@@ -1,0 +1,1647 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>md — navigation redesign mockup (no watermark)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: oklch(95% 0.008 145);
+        --paper-warm: oklch(92% 0.012 140);
+        --canvas: oklch(88% 0.012 145);
+        --ink: oklch(24% 0.014 240);
+        --border: oklch(85% 0.012 140);
+        --muted: oklch(48% 0.018 200);
+        --ochre: oklch(64% 0.14 85);
+        --ochre-deep: oklch(54% 0.16 80);
+        --shadow-soft: 0 4px 24px oklch(20% 0.014 240 / 0.1);
+
+        --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+        --frame-w-mobile: 360px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--canvas);
+        color: var(--ink);
+        font-family: var(--font-sans);
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 56px 32px 96px;
+      }
+
+      header.doc {
+        margin-bottom: 56px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      header.doc .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      header.doc h1 {
+        font-size: 36px;
+        line-height: 1.1;
+        letter-spacing: -0.025em;
+        margin: 0 0 16px;
+        font-weight: 700;
+      }
+
+      header.doc p {
+        font-size: 16px;
+        line-height: 1.65;
+        margin: 0;
+      }
+
+      header.doc p + p {
+        margin-top: 12px;
+      }
+
+      .section {
+        margin-bottom: 64px;
+      }
+
+      .section-head {
+        margin-bottom: 20px;
+      }
+
+      .section-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+        font-weight: 500;
+      }
+
+      .section-head h2 {
+        font-size: 24px;
+        line-height: 1.2;
+        letter-spacing: -0.015em;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+
+      .section-head p {
+        font-size: 15px;
+        line-height: 1.55;
+        margin: 0;
+        color: var(--ink);
+      }
+
+      .section-head code,
+      header.doc code {
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 1px 6px;
+        color: var(--ink);
+      }
+
+      .note {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-top: 8px;
+      }
+
+      .note strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .frame {
+        background: var(--paper);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+        position: relative;
+        container-type: inline-size;
+      }
+
+      .frame-label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .frame-label .badge {
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 8px;
+        color: var(--ink);
+      }
+
+      .compare {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      /* ============== shared surface elements ============== */
+
+      .surface {
+        position: relative;
+        min-height: 320px;
+        padding: 24px 32px 56px;
+      }
+
+      /* top-right cluster: holds the reader toolbar (only present on reader surfaces) */
+      /* top: 40px aligns with the article H1's top edge (surface 24px padding + reader 16px padding) */
+      .topbar-cluster {
+        position: absolute;
+        top: 40px;
+        right: 24px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 10;
+      }
+
+      /* responsive: when the frame gets too narrow for the horizontal cluster to clear the article H1, flip the cluster to a vertical column on the right edge */
+      @container (max-width: 720px) {
+        .topbar-cluster {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 6px;
+        }
+        .topbar-cluster .width-pill {
+          flex-direction: column;
+          border-radius: 6px;
+          height: auto;
+          width: 32px;
+        }
+        .topbar-cluster .width-pill button {
+          padding: 0;
+          width: 100%;
+          height: 22px;
+          font-size: 0;
+        }
+        .topbar-cluster .width-pill button[data-short]::before {
+          content: attr(data-short);
+          font-size: 10px;
+          font-weight: inherit;
+          letter-spacing: 0.04em;
+        }
+        /* article gets right-padding so prose wraps before reaching the vertical column */
+        .topbar-cluster ~ .reader {
+          padding-right: 56px;
+        }
+      }
+
+      /* mobile reader toolbar — bottom-right, thumb-reachable */
+      .reader-mobile-toolbar {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        z-index: 10;
+      }
+
+      /* the wordmark — replaces the watermark glyph */
+      .brand-mark {
+        position: absolute;
+        bottom: 16px;
+        left: 24px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        z-index: 5;
+        opacity: 0.7;
+      }
+
+      /* ============== reader article ============== */
+
+      .reader {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-top: 16px;
+      }
+
+      .reader article h1 {
+        font-size: 36px;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+        margin: 0 0 18px;
+      }
+
+      .reader article p {
+        font-size: 16px;
+        line-height: 1.65;
+        margin: 0 0 14px;
+        color: var(--ink);
+      }
+
+      .reader article h2 {
+        font-size: 22px;
+        line-height: 1.2;
+        letter-spacing: -0.015em;
+        font-weight: 600;
+        margin: 24px 0 10px;
+      }
+
+      .reader article code {
+        background: var(--paper-warm);
+        color: var(--ochre-deep);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+      }
+
+      /* ============== toolbar buttons ============== */
+
+      .tb {
+        background: var(--paper);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        cursor: pointer;
+        transition: border-color 200ms, color 200ms;
+        padding: 0;
+        flex-shrink: 0;
+      }
+
+      .tb:hover {
+        border-color: var(--ochre);
+        color: var(--ochre);
+      }
+
+      .tb svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .tb[data-active="true"] {
+        background: var(--ochre);
+        border-color: var(--ochre);
+        color: var(--paper);
+      }
+
+      .width-pill {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--paper);
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      .width-pill button {
+        background: transparent;
+        border: 0;
+        padding: 0 10px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        cursor: pointer;
+        height: 100%;
+      }
+
+      .width-pill button[data-active="true"] {
+        background: var(--ochre);
+        color: var(--paper);
+        font-weight: 600;
+      }
+
+      /* ============== dashboard ============== */
+
+      .dashboard-head {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .kbd-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      .kbd-chip .keys {
+        display: inline-flex;
+        gap: 4px;
+      }
+
+      .kbd-chip kbd {
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        line-height: 1;
+        color: var(--ink);
+      }
+
+      .new-doc-btn {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--ink);
+        color: var(--paper);
+        border: 0;
+        border-radius: 6px;
+        padding: 9px 14px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 180ms;
+      }
+
+      .new-doc-btn:hover {
+        background: var(--ochre-deep);
+      }
+
+      .new-doc-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .doc-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .doc-row {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 11px 14px;
+        cursor: pointer;
+        transition: color 200ms;
+      }
+
+      .doc-row:hover .doc-title {
+        color: var(--ochre);
+      }
+
+      .doc-title {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.3;
+        flex: 1;
+        color: var(--ink);
+        transition: color 200ms;
+      }
+
+      .doc-meta {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        font-feature-settings: "tnum";
+        color: var(--muted);
+      }
+
+      .load-more-row {
+        display: flex;
+        justify-content: center;
+        margin-top: 14px;
+      }
+
+      /* ============== /new ============== */
+
+      .new-form {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-top: 16px;
+      }
+
+      .title-input {
+        display: block;
+        width: 100%;
+        height: 40px;
+        padding: 0 14px;
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        color: var(--ink);
+        margin-bottom: 12px;
+      }
+
+      .title-input::placeholder {
+        color: oklch(48% 0.018 200 / 0.7);
+      }
+
+      .dropzone {
+        position: relative;
+        border: 1.5px dashed var(--border);
+        border-radius: 6px;
+        background: var(--paper-warm);
+        height: 180px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 14px;
+      }
+
+      .dropzone-empty {
+        text-align: center;
+      }
+
+      .dropzone-empty .lead {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+      }
+
+      .dropzone-empty .sub {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn-primary {
+        background: var(--ink);
+        color: var(--paper);
+        border: 0;
+        border-radius: 6px;
+        padding: 9px 18px;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 180ms;
+      }
+
+      .btn-primary:hover {
+        background: var(--ochre-deep);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 9px 14px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        cursor: pointer;
+        transition: background 180ms;
+      }
+
+      .btn-ghost:hover {
+        background: var(--paper-warm);
+      }
+
+      /* ============== editor ============== */
+
+      .editor {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-top: 16px;
+      }
+
+      .editor textarea {
+        display: block;
+        width: 100%;
+        min-height: 200px;
+        padding: 12px 14px;
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--ink);
+        resize: vertical;
+        margin-bottom: 12px;
+      }
+
+      .editor-foot {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .status-pill {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--ochre);
+      }
+
+      .status-pill.muted {
+        color: var(--muted);
+      }
+
+      .editor-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+      }
+
+      .btn-icon-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--paper);
+        color: var(--ink);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 180ms, color 180ms;
+      }
+
+      .btn-icon-text:hover {
+        border-color: var(--ochre);
+        color: var(--ochre);
+      }
+
+      .btn-icon-text.primary {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+
+      .btn-icon-text.primary:hover {
+        background: var(--ochre-deep);
+        border-color: var(--ochre-deep);
+        color: var(--paper);
+      }
+
+      .btn-icon-text svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .kbd-mini {
+        display: inline-flex;
+        gap: 3px;
+        margin-left: 4px;
+      }
+
+      .kbd-mini kbd {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 500;
+        background: oklch(95% 0.008 145 / 0.4);
+        border: 1px solid oklch(85% 0.012 140 / 0.6);
+        border-radius: 3px;
+        padding: 1px 4px;
+        color: var(--muted);
+      }
+
+      .btn-icon-text.primary .kbd-mini kbd {
+        background: oklch(0% 0 0 / 0.18);
+        border-color: oklch(0% 0 0 / 0.16);
+        color: oklch(95% 0.008 145 / 0.65);
+      }
+
+      /* status flash on save */
+      @keyframes status-flash {
+        0% {
+          color: var(--ochre-deep);
+          transform: translateY(-1px);
+        }
+        60% {
+          color: var(--ochre-deep);
+          transform: translateY(0);
+        }
+        100% {
+          color: var(--ochre);
+          transform: translateY(0);
+        }
+      }
+      .status-pill.just-saved {
+        animation: status-flash 700ms cubic-bezier(0.165, 0.84, 0.44, 1);
+      }
+
+      /* ============== settings ============== */
+
+      .settings {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-top: 16px;
+      }
+
+      .settings h1 {
+        font-size: 28px;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+        margin: 0 0 6px;
+      }
+
+      .settings .sub {
+        font-size: 14px;
+        color: var(--muted);
+        margin: 0 0 28px;
+      }
+
+      .settings .sec-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--ochre);
+        padding-bottom: 6px;
+        margin-bottom: 14px;
+      }
+
+      .settings .sec-head h2 {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--ink);
+        margin: 0;
+      }
+
+      .settings .sec-head .marker {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: none;
+        letter-spacing: 0.04em;
+        margin-left: 8px;
+      }
+
+      .settings .sec-blurb {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.55;
+        margin: 0 0 14px;
+      }
+
+      .settings table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .settings table thead th {
+        text-align: left;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        padding: 6px 0;
+      }
+
+      .settings table tbody td {
+        padding: 10px 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .settings table tbody td.mono {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--muted);
+        font-feature-settings: "tnum";
+      }
+
+      .settings table .revoke {
+        background: transparent;
+        border: 0;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .settings .sec.sketch {
+        opacity: 0.55;
+        margin-top: 28px;
+      }
+
+      /* ============== cmd palette ============== */
+
+      .palette-overlay {
+        position: relative;
+        background: var(--paper);
+        min-height: 380px;
+      }
+
+      .palette-overlay .behind {
+        padding: 24px 32px 56px;
+        opacity: 0.5;
+        pointer-events: none;
+        position: relative;
+      }
+
+      .palette-overlay .backdrop {
+        position: absolute;
+        inset: 0;
+        background: oklch(20% 0.014 240 / 0.45);
+        z-index: 5;
+      }
+
+      .palette {
+        position: absolute;
+        top: 64px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 480px;
+        max-width: calc(100% - 48px);
+        background: var(--paper);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: var(--shadow-soft);
+        z-index: 10;
+        overflow: hidden;
+      }
+
+      .palette-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .palette-input-row svg {
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+      }
+
+      .palette-input-row input {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        outline: none;
+        font-family: var(--font-sans);
+        font-size: 15px;
+        color: var(--ink);
+      }
+
+      .palette-input-row input::placeholder {
+        color: oklch(48% 0.018 200 / 0.7);
+      }
+
+      .palette-body {
+        padding: 6px;
+      }
+
+      .palette-group-label {
+        font-family: var(--font-sans);
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        padding: 6px 8px 4px;
+      }
+
+      .palette-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        font-size: 14px;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      .palette-row:hover {
+        background: var(--paper-warm);
+      }
+
+      .palette-row[data-selected="true"] {
+        background: var(--paper-warm);
+        box-shadow: inset 3px 0 0 var(--ochre);
+      }
+
+      .palette-row .icon {
+        width: 22px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+      }
+
+      .palette-row .icon svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .palette-row .title {
+        flex: 1;
+      }
+
+      .palette-row .meta {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .palette-row .meta .keys {
+        display: inline-flex;
+        gap: 3px;
+      }
+
+      .palette-row .meta kbd {
+        background: var(--paper-warm);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .palette-foot {
+        display: flex;
+        gap: 14px;
+        justify-content: flex-end;
+        padding: 8px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--paper-warm);
+      }
+
+      .palette-foot .hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .palette-foot .hint .keys {
+        display: inline-flex;
+        gap: 3px;
+      }
+
+      .palette-foot .hint kbd {
+        background: var(--paper);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* ============== drop-anywhere accepted ============== */
+
+      .drop-active::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px solid var(--ochre);
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      /* ============== mobile previews ============== */
+
+      .mobile-row {
+        display: grid;
+        grid-template-columns: repeat(3, 360px);
+        gap: 24px;
+        justify-content: center;
+      }
+
+      @media (max-width: 1180px) {
+        .mobile-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .mobile-frame .frame {
+        width: var(--frame-w-mobile);
+      }
+
+      .mobile-frame .surface {
+        min-height: 480px;
+        padding: 16px 16px 56px;
+      }
+
+      .mobile-frame .reader,
+      .mobile-frame .editor,
+      .mobile-frame .new-form {
+        padding-top: 8px;
+        max-width: 100%;
+      }
+
+      .mobile-frame .reader article h1 {
+        font-size: 24px;
+      }
+
+      .mobile-frame .reader article p {
+        font-size: 15px;
+      }
+
+      .mobile-frame .reader article h2 {
+        font-size: 18px;
+      }
+
+      .mobile-frame .dashboard-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .mobile-frame .new-doc-btn {
+        margin-left: 0;
+      }
+
+      .mobile-frame .editor-foot {
+        flex-wrap: wrap;
+      }
+
+      .mobile-frame .editor-actions {
+        margin-left: 0;
+      }
+
+      .mobile-frame .brand-mark {
+        bottom: 14px;
+        left: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="doc">
+        <div class="eyebrow">md.niftymonkey.dev · navigation redesign · mockup v2 · no watermark</div>
+        <h1>Operator navigation, post-cmd-palette, post-watermark</h1>
+        <p>
+          Same Linear-lane model as v1. The cmd palette is the operator's
+          primary verb-tool; recipients of share links get visible affordances
+          because they land cold. The dashboard is a real document list; the
+          upload form lives at <code>/new</code>; dropping a markdown file
+          anywhere routes there. New in v2: the watermark glyph is gone. Brand
+          presence lives as a quiet Mono wordmark in the bottom-left of every
+          surface. The reader cluster keeps its top-right position but loses
+          the watermark + divider. The editor relies on the existing status
+          pill flash for save confirmation.
+        </p>
+      </header>
+
+      <!-- ====================== READER · UNAUTHED ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · reader · default</div>
+          <h2>Reader (<code>/v/&lt;slug&gt;</code>) · unauthed recipient</h2>
+          <p>
+            What the share-link recipient sees. Three visible affordances
+            clustered in the top-right corner: width pill, copy link, view raw.
+            Brand presence is the wordmark in the bottom-left.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="topbar-cluster">
+              <div class="width-pill" title="Width: Reading or Wide">
+                <button data-active="true" data-short="R" type="button">reading</button>
+                <button data-short="W" type="button">wide</button>
+              </div>
+              <button class="tb" title="Copy link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19"/></svg>
+              </button>
+              <button class="tb" title="View raw">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </button>
+            </div>
+            <div class="reader">
+              <article>
+                <h1>Notes on type design</h1>
+                <p>A typeface is not the shape of a letter; it is the rhythm between letters. The same a in two faces can sit on different ground, breathe differently, lean into or away from its neighbors.</p>
+                <h2>Weight is not size</h2>
+                <p>Inter Tight carries hierarchy across one variable axis from 400 to 700. The discipline is using <code>font-weight</code> as a real axis instead of defaulting to a second family, which would just add noise.</p>
+              </article>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+        <div class="note"><strong>Note:</strong> three buttons. No back-to-dashboard. The recipient has no operator account and no business going to <code>/</code>. Brand attribution lives quietly at the bottom-left as a Mono wordmark.</div>
+      </section>
+
+      <!-- ====================== READER · AUTHED ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · reader · authed</div>
+          <h2>Reader · same page, authed operator</h2>
+          <p>
+            When the operator views their own doc, the toolbar gains one extra
+            button: back to dashboard. The chrome shifts based on auth state;
+            you flagged this as an inconsistency and chose to live with it.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="topbar-cluster">
+              <div class="width-pill" title="Width">
+                <button data-active="true" data-short="R" type="button">reading</button>
+                <button data-short="W" type="button">wide</button>
+              </div>
+              <button class="tb" title="Copy link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19"/></svg>
+              </button>
+              <button class="tb" title="View raw">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </button>
+              <button class="tb" title="Back to dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
+            <div class="reader">
+              <article>
+                <h1>Notes on type design</h1>
+                <p>A typeface is not the shape of a letter; it is the rhythm between letters. The operator viewing their own doc reads it the same way a recipient does, plus one button back to home.</p>
+                <h2>Weight is not size</h2>
+                <p>Inter Tight carries hierarchy across one variable axis from 400 to 700.</p>
+              </article>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+        <div class="note"><strong>Note:</strong> edit, sign-out, and other operator actions live in the cmd palette via <code>⌘K</code>, with hotkey mirrors (<code>e</code>, <code>g d</code>). The toolbar only carries the highest-frequency operator action that doesn't have a single-key equivalent.</div>
+      </section>
+
+      <!-- ====================== READER · WITH OUTLINE ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · reader · outline rail</div>
+          <h2>Reader with outline (≥3 H2s, ≥1100px viewport)</h2>
+          <p>
+            The 240px outline rail on the right carries the toolbar in its
+            header. The surface top-right is empty now that the watermark is
+            gone — the rail does all the chrome work.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 32px; padding-top: 16px;">
+              <article style="max-width: 520px; margin: 0 auto;">
+                <h1 style="font-size: 32px; line-height: 1.12; letter-spacing: -0.025em; font-weight: 700; margin: 0 0 16px;">Notes on type design</h1>
+                <p style="font-size: 16px; line-height: 1.65; margin: 0 0 12px;">A typeface is not the shape of a letter; it is the rhythm between letters. The discipline of choosing one is the discipline of choosing the rhythm you want a doc to keep.</p>
+                <h2 style="font-size: 20px; line-height: 1.2; letter-spacing: -0.015em; font-weight: 600; margin: 22px 0 8px;">Weight is not size</h2>
+                <p style="font-size: 16px; line-height: 1.65; margin: 0 0 12px;">Inter Tight carries hierarchy across one variable axis from 400 to 700.</p>
+                <h2 style="font-size: 20px; line-height: 1.2; letter-spacing: -0.015em; font-weight: 600; margin: 22px 0 8px;">Mono earns its place</h2>
+                <p style="font-size: 16px; line-height: 1.65; margin: 0 0 12px;">Geist Mono renders code and a small set of chrome micro-types.</p>
+                <h2 style="font-size: 20px; line-height: 1.2; letter-spacing: -0.015em; font-weight: 600; margin: 22px 0 8px;">The leading rule</h2>
+                <p style="font-size: 16px; line-height: 1.65; margin: 0 0 12px;">Code blocks earn a 2px ochre left rule.</p>
+              </article>
+              <aside style="position: sticky; top: 8px; align-self: start;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
+                  <span style="font-family: var(--font-sans); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);">On this page</span>
+                  <button class="tb" title="Hide outline" data-active="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+                  </button>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 12px;">
+                  <div class="width-pill" title="Width">
+                    <button data-active="true" type="button">reading</button>
+                    <button type="button">wide</button>
+                  </div>
+                  <button class="tb" title="Copy link">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19"/></svg>
+                  </button>
+                  <button class="tb" title="View raw">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                  </button>
+                </div>
+                <ol style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted);">
+                  <li style="padding: 4px 0 4px 12px; color: var(--ochre); font-weight: 600; position: relative;">
+                    <span style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--ochre);"></span>
+                    Weight is not size
+                  </li>
+                  <li style="padding: 4px 0 4px 12px;">Mono earns its place</li>
+                  <li style="padding: 4px 0 4px 12px;">The leading rule</li>
+                </ol>
+              </aside>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+        <div class="note"><strong>Note:</strong> below 1100px viewport, the rail goes away and the toolbar moves back to the surface top-right cluster (same layout as the no-outline reader above).</div>
+      </section>
+
+      <!-- ====================== READER · TOOLBAR RESPONSIVE BEHAVIOR ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">reader · responsive behavior</div>
+          <h2>Reader toolbar — width-driven orientation</h2>
+          <p>
+            One toolbar, two orientations, picked by the surface's own width.
+            At wide viewports the cluster sits horizontally in the top-right,
+            its top edge aligned with the article H1. When the surface narrows
+            past ~720px and the horizontal cluster would collide with the H1,
+            the cluster flips to a vertical column on the right edge — width
+            pill compresses to single-letter R / W, icon buttons stack, prose
+            gains the right-padding it needs to wrap before the column. The
+            top of the column still aligns with the H1's top edge.
+          </p>
+          <p>
+            Resize your browser window to see it switch. The container query
+            fires on the frame's own inline-size, so the same component swaps
+            shape regardless of which surface it's mounted in.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="topbar-cluster">
+              <div class="width-pill" title="Width">
+                <button data-active="true" data-short="R" type="button">reading</button>
+                <button data-short="W" type="button">wide</button>
+              </div>
+              <button class="tb" title="Copy link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19"/></svg>
+              </button>
+              <button class="tb" title="View raw">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </button>
+            </div>
+            <div class="reader">
+              <article>
+                <h1>Notes on type design</h1>
+                <p>A typeface is not the shape of a letter; it is the rhythm between letters. The same a in two faces can sit on different ground, breathe differently, lean into or away from its neighbors.</p>
+                <h2>Weight is not size</h2>
+                <p>Inter Tight carries hierarchy across one variable axis from 400 to 700. The discipline is using <code>font-weight</code> as a real axis instead of defaulting to a second family, which would just add noise.</p>
+              </article>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+        <div class="note"><strong>Note:</strong> the trigger is a CSS container query on the frame, not a viewport media query. Wherever this toolbar appears, it adopts the orientation that fits the available width. Same buttons, same actions, same hotkeys; only the layout changes.</div>
+      </section>
+
+      <!-- ====================== DASHBOARD ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · dashboard</div>
+          <h2>Dashboard (<code>/</code>)</h2>
+          <p>
+            Becomes a real document list. No upload form, no search bar. A
+            kbd-chip teaches <code>⌘K</code>; the visible affordance for new-doc
+            is a primary button. Top-right corner is empty now.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="dashboard-head">
+              <span class="kbd-chip">press <span class="keys"><kbd>⌘</kbd><kbd>K</kbd></span> to navigate</span>
+              <button class="new-doc-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New document
+              </button>
+            </div>
+            <div class="doc-list">
+              <div class="doc-row"><span class="doc-title">Notes on type design</span><span class="doc-meta">apr 30 · 7m ago</span></div>
+              <div class="doc-row"><span class="doc-title">Personal API tokens — security audit</span><span class="doc-meta">apr 29 · 1d ago</span></div>
+              <div class="doc-row"><span class="doc-title">Reader outline behaviour</span><span class="doc-meta">apr 25 · 5d ago</span></div>
+              <div class="doc-row"><span class="doc-title">Watermark redesign — phase 5</span><span class="doc-meta">apr 24 · 6d ago</span></div>
+              <div class="doc-row"><span class="doc-title">Migration brief</span><span class="doc-meta">apr 22 · 1w ago</span></div>
+              <div class="load-more-row"><button class="btn-ghost">Load more</button></div>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== /NEW ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · /new</div>
+          <h2><code>/new</code></h2>
+          <p>
+            New route. The upload form lifted from today's dashboard. Drop on
+            any other operator surface routes here with the file pre-loaded.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="new-form">
+              <input class="title-input" type="text" placeholder="Title (optional, defaults to first heading)" />
+              <div class="dropzone">
+                <div class="dropzone-empty">
+                  <div class="lead">Drop or paste markdown here</div>
+                  <div class="sub">or click Choose file · 1MB cap</div>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="btn-primary">Publish</button>
+                <button class="btn-ghost">Choose file</button>
+              </div>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== EDITOR · DIRTY ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · editor · dirty state</div>
+          <h2>Editor (<code>/edit/&lt;slug&gt;</code>)</h2>
+          <p>
+            Visible Save / Cancel / View raw buttons replace the "weird text at
+            the bottom." The title input is the de facto header — no chrome
+            above it. Status pill on the left, buttons on the right; hotkeys
+            mirrored on the buttons.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="editor">
+              <input class="title-input" type="text" value="Notes on type design" />
+              <textarea spellcheck="false"># Notes on type design
+
+A typeface is not the shape of a letter; it is the rhythm
+between letters.
+
+## Weight is not size
+
+Inter Tight carries hierarchy across one variable axis...</textarea>
+              <div class="editor-foot">
+                <span class="status-pill">unsaved changes</span>
+                <div class="editor-actions">
+                  <button class="btn-icon-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                    View raw
+                  </button>
+                  <button class="btn-icon-text">Cancel <span class="kbd-mini"><kbd>esc</kbd></span></button>
+                  <button class="btn-icon-text primary">Save <span class="kbd-mini"><kbd>⌘</kbd><kbd>S</kbd></span></button>
+                </div>
+              </div>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== EDITOR · SAVED ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">editor · sub-state</div>
+          <h2>Editor · just-saved</h2>
+          <p>
+            The status pill is the entire save signal now. It flashes ochre on
+            save (animation runs once on render). No watermark pulse, since
+            there's no watermark.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="editor">
+              <input class="title-input" type="text" value="Notes on type design" />
+              <textarea spellcheck="false" style="min-height: 140px;"># Notes on type design
+
+A typeface is not the shape of a letter.</textarea>
+              <div class="editor-foot">
+                <span class="status-pill just-saved">saved</span>
+                <div class="editor-actions">
+                  <button class="btn-icon-text">View raw</button>
+                  <button class="btn-icon-text">Cancel <span class="kbd-mini"><kbd>esc</kbd></span></button>
+                  <button class="btn-icon-text primary">Save <span class="kbd-mini"><kbd>⌘</kbd><kbd>S</kbd></span></button>
+                </div>
+              </div>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== SETTINGS ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · settings</div>
+          <h2>Settings (<code>/settings</code>)</h2>
+          <p>
+            Page-as-affordance. No toolbar. Sections (API tokens, future
+            Reading prefs, Account) are the page.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="surface">
+            <div class="settings">
+              <h1>Settings</h1>
+              <p class="sub">Preferences and API token management.</p>
+
+              <section class="sec">
+                <div class="sec-head">
+                  <h2>API tokens</h2>
+                  <button class="btn-ghost">New token</button>
+                </div>
+                <p class="sec-blurb">Personal access tokens let scripts and AI agents call the API on your behalf. Each token is shown only at creation; we store a hash, not the value.</p>
+                <table>
+                  <thead>
+                    <tr><th>Name</th><th>Prefix</th><th>Last used</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>md-upload skill</td>
+                      <td class="mono">md_3a4b</td>
+                      <td class="mono">7m ago</td>
+                      <td style="text-align: right;"><button class="revoke">revoke</button></td>
+                    </tr>
+                    <tr>
+                      <td>cli-publish</td>
+                      <td class="mono">md_8e2f</td>
+                      <td class="mono">3d ago</td>
+                      <td style="text-align: right;"><button class="revoke">revoke</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+
+              <section class="sec sketch">
+                <div class="sec-head">
+                  <h2>Reading <span class="marker">sketched · ships separately</span></h2>
+                </div>
+                <p class="sec-blurb">Auto-show outline · default width · prefers-reduced-motion override.</p>
+              </section>
+
+              <section class="sec sketch">
+                <div class="sec-head">
+                  <h2>Account <span class="marker">sketched</span></h2>
+                </div>
+                <p class="sec-blurb">Operator email · sign out.</p>
+              </section>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== CMD PALETTE ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">surface · cmd palette</div>
+          <h2>Cmd palette · open state</h2>
+          <p>
+            Mounted globally for authed operators. Context-aware actions; first
+            selected row gets the ochre left rule.
+          </p>
+        </div>
+
+        <div class="frame">
+          <div class="palette-overlay">
+            <div class="behind">
+              <div class="dashboard-head">
+                <span class="kbd-chip">press <span class="keys"><kbd>⌘</kbd><kbd>K</kbd></span> to navigate</span>
+                <button class="new-doc-btn">New document</button>
+              </div>
+              <div class="doc-list">
+                <div class="doc-row"><span class="doc-title">Notes on type design</span><span class="doc-meta">apr 30 · 7m ago</span></div>
+                <div class="doc-row"><span class="doc-title">Personal API tokens — security audit</span><span class="doc-meta">apr 29 · 1d ago</span></div>
+              </div>
+              <div class="brand-mark">md.niftymonkey.dev</div>
+            </div>
+            <div class="backdrop"></div>
+            <div class="palette">
+              <div class="palette-input-row">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input value="type" />
+              </div>
+              <div class="palette-body">
+                <div class="palette-group-label">Documents</div>
+                <div class="palette-row" data-selected="true">
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>
+                  <span class="title">Notes on type design</span>
+                  <span class="meta">notes-on-type-design</span>
+                </div>
+                <div class="palette-row">
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
+                  <span class="title">Type-tightening rules</span>
+                  <span class="meta">type-tightening</span>
+                </div>
+                <div class="palette-group-label">Actions</div>
+                <div class="palette-row">
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span>
+                  <span class="title">New document</span>
+                  <span class="meta"><span class="keys"><kbd>g</kbd><kbd>n</kbd></span></span>
+                </div>
+                <div class="palette-row">
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg></span>
+                  <span class="title">Open settings</span>
+                </div>
+              </div>
+              <div class="palette-foot">
+                <span class="hint"><span class="keys"><kbd>↑</kbd><kbd>↓</kbd></span> navigate</span>
+                <span class="hint"><span class="keys"><kbd>↵</kbd></span> open</span>
+                <span class="hint"><span class="keys"><kbd>esc</kbd></span> close</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== DROP-ANYWHERE ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">interaction · whimsy</div>
+          <h2>Drop-anywhere — accepted state</h2>
+          <p>
+            Dragging a <code>.md</code> file over any operator surface tints
+            the page edge with a 1px ochre hairline frame. Drop routes to
+            <code>/new</code> with the file pre-loaded. Without the watermark,
+            the frame is the entire signal; the previous watermark-pulse echo
+            is gone.
+          </p>
+        </div>
+
+        <div class="frame drop-active">
+          <div class="surface" style="min-height: 280px;">
+            <div class="dashboard-head">
+              <span class="kbd-chip">press <span class="keys"><kbd>⌘</kbd><kbd>K</kbd></span> to navigate</span>
+              <button class="new-doc-btn">New document</button>
+            </div>
+            <div class="doc-list">
+              <div class="doc-row"><span class="doc-title">Notes on type design</span><span class="doc-meta">apr 30 · 7m ago</span></div>
+              <div class="doc-row"><span class="doc-title">Reader outline behaviour</span><span class="doc-meta">apr 25 · 5d ago</span></div>
+            </div>
+            <div class="brand-mark">md.niftymonkey.dev</div>
+          </div>
+        </div>
+        <div class="note"><strong>Note:</strong> the ochre hairline is 1px solid, sits on the frame itself. No copy. No big rectangular dropzone. The whole page is the drop target; the frame is the signal.</div>
+      </section>
+
+      <!-- ====================== MOBILE ====================== -->
+
+      <section class="section">
+        <div class="section-head">
+          <div class="section-eyebrow">responsive</div>
+          <h2>Mobile</h2>
+          <p>
+            Reader chrome moves to a bottom-right cluster (thumb-reachable).
+            Wordmark sits in the bottom-left of every surface, including
+            mobile. Other surfaces (dashboard, editor) are a vertical stack.
+          </p>
+        </div>
+
+        <div class="mobile-row">
+          <div class="mobile-frame">
+            <div class="frame-label"><span class="badge">reader</span> 360px</div>
+            <div class="frame">
+              <div class="surface">
+                <div class="reader-mobile-toolbar">
+                  <div class="width-pill"><button data-active="true" type="button">reading</button><button type="button">wide</button></div>
+                  <button class="tb"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19"/></svg></button>
+                  <button class="tb"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></button>
+                </div>
+                <div class="reader">
+                  <article>
+                    <h1>Notes on type design</h1>
+                    <p>A typeface is not the shape of a letter; it is the rhythm between letters.</p>
+                    <h2>Weight is not size</h2>
+                    <p>Inter Tight carries hierarchy across one variable axis.</p>
+                  </article>
+                </div>
+                <div class="brand-mark">md.niftymonkey.dev</div>
+              </div>
+            </div>
+            <div class="note">Wordmark bottom-left, reader toolbar bottom-right.</div>
+          </div>
+
+          <div class="mobile-frame">
+            <div class="frame-label"><span class="badge">dashboard</span> 360px</div>
+            <div class="frame">
+              <div class="surface">
+                <div class="dashboard-head">
+                  <span class="kbd-chip">press <span class="keys"><kbd>⌘</kbd><kbd>K</kbd></span> to navigate</span>
+                  <button class="new-doc-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New document
+                  </button>
+                </div>
+                <div class="doc-list">
+                  <div class="doc-row"><span class="doc-title">Notes on type design</span><span class="doc-meta">7m ago</span></div>
+                  <div class="doc-row"><span class="doc-title">Reader outline behaviour</span><span class="doc-meta">5d ago</span></div>
+                  <div class="doc-row"><span class="doc-title">Migration brief</span><span class="doc-meta">1w ago</span></div>
+                </div>
+                <div class="brand-mark">md.niftymonkey.dev</div>
+              </div>
+            </div>
+            <div class="note">kbd-chip stacks above New doc button.</div>
+          </div>
+
+          <div class="mobile-frame">
+            <div class="frame-label"><span class="badge">editor</span> 360px</div>
+            <div class="frame">
+              <div class="surface">
+                <div class="editor">
+                  <input class="title-input" type="text" value="Notes on type design" />
+                  <textarea spellcheck="false" style="min-height: 140px;"># Notes on type design
+
+A typeface is not the shape of a letter.</textarea>
+                  <div class="editor-foot">
+                    <span class="status-pill" style="flex: 1;">unsaved</span>
+                    <div class="editor-actions">
+                      <button class="btn-icon-text">Cancel</button>
+                      <button class="btn-icon-text primary">Save</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="brand-mark">md.niftymonkey.dev</div>
+              </div>
+            </div>
+            <div class="note">Save / Cancel always visible at the bottom.</div>
+          </div>
+        </div>
+      </section>
+
+      <footer style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1.6;">
+        nav-redesign-mockup v2 · no watermark · static · light theme only
+      </footer>
+    </div>
+  </body>
+</html>
