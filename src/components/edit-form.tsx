@@ -165,12 +165,6 @@ export function EditForm({
           {statusLabel}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          <a
-            href={`/api/raw/${slug}`}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-paper px-3 py-1.5 text-[0.8125rem] font-semibold text-ink transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
-          >
-            View raw
-          </a>
           <button
             type="button"
             onClick={cancel}

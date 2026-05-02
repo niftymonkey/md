@@ -230,7 +230,7 @@ export function CmdPalette({ signOutAction }: Props) {
     });
   }
 
-  if ((isReader || isEdit) && docSlug) {
+  if (isReader && docSlug) {
     actions.push({
       id: "view-raw",
       title: "View raw markdown",
@@ -240,6 +240,9 @@ export function CmdPalette({ signOutAction }: Props) {
         window.location.assign(`/api/raw/${docSlug}`);
       },
     });
+  }
+
+  if ((isReader || isEdit) && docSlug) {
     actions.push({
       id: "copy-link",
       title: "Copy link to this document",
