@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { listTokensForOwner } from "@/lib/api-tokens";
-import { Watermark } from "@/components/watermark";
 import { TokensSection } from "./_components/tokens-section";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +22,6 @@ export default async function SettingsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
       <div className="settings">
-        <div className="settings__watermark">
-          <Watermark variant="settings" />
-        </div>
         <h1 className="settings__h1">Settings</h1>
         <p className="settings__sub">
           Preferences and API token management.

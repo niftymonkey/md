@@ -109,10 +109,6 @@ export function CmdPalette({ signOutAction }: Props) {
         reset();
         return;
       }
-      if (document.querySelector('[data-watermark-open="true"]')) {
-        reset();
-        return;
-      }
       if (waiting && (e.key === "d" || e.key === "D")) {
         e.preventDefault();
         reset();

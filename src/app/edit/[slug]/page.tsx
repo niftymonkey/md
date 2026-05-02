@@ -1,13 +1,8 @@
 import { redirect, notFound } from "next/navigation";
-import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import { EditForm } from "@/components/edit-form";
-
-async function signOutAction() {
-  "use server";
-  await signOut();
-}
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -33,7 +28,6 @@ export default async function EditPage({ params }: PageProps) {
         slug={doc.slug}
         initialContent={doc.content}
         initialTitle={doc.title}
-        signOutAction={signOutAction}
       />
     </main>
   );

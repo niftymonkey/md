@@ -6,6 +6,7 @@ import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { DevThemeSwitcher } from "@/components/dev-theme-switcher";
 import { CmdPalette } from "@/components/cmd-palette";
+import { BrandMark } from "@/components/brand-mark";
 import "./globals.css";
 
 async function signOutAction() {
@@ -49,6 +50,7 @@ export default async function RootLayout({
           {PRE_HYDRATION_SCRIPT}
         </Script>
         <AuthKitProvider>{children}</AuthKitProvider>
+        <BrandMark />
         {process.env.NODE_ENV === "development" && <DevThemeSwitcher />}
         {showPalette && <CmdPalette signOutAction={signOutAction} />}
       </body>

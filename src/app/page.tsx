@@ -3,8 +3,6 @@ import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { UploadForm } from "@/components/upload-form";
 import { DocList } from "@/components/doc-list";
-import { Watermark } from "@/components/watermark";
-import { SearchBar } from "@/components/search-bar";
 
 async function signOutAction() {
   "use server";
@@ -41,10 +39,6 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mb-6 flex items-center gap-3">
-        <SearchBar />
-        <Watermark variant="operator" size="lg" signOutAction={signOutAction} />
-      </div>
       <section className="mb-10">
         <UploadForm />
       </section>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Watermark } from "./watermark";
 
 const MAX_BYTES = 1024 * 1024;
 
@@ -10,7 +9,6 @@ type Props = {
   slug: string;
   initialContent: string;
   initialTitle: string;
-  signOutAction?: () => Promise<void>;
 };
 
 function macKey(k: string): string {
@@ -56,7 +54,6 @@ export function EditForm({
   slug,
   initialContent,
   initialTitle,
-  signOutAction,
 }: Props) {
   const [content, setContent] = useState(initialContent);
   const [title, setTitle] = useState(initialTitle);
@@ -135,7 +132,6 @@ export function EditForm({
         return;
       }
       if (e.key === "Escape") {
-        if (document.querySelector('[data-watermark-open="true"]')) return;
         if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
         const target = e.target as HTMLElement | null;
         const tag = target?.tagName;
@@ -169,26 +165,14 @@ export function EditForm({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Untitled"
-          aria-label="Title"
-          className="block h-11 flex-1 rounded-md border border-border bg-paper-warm px-3.5 text-base font-semibold tracking-[-0.01em] placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
-        />
-        <Watermark
-          variant="editor"
-          size="lg"
-          rawHref={`/api/raw/${slug}`}
-          dashboardHref="/"
-          signOutAction={signOutAction}
-          pulse={justSaved}
-          onSave={() => void save()}
-          onCancel={cancel}
-        />
-      </div>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Untitled"
+        aria-label="Title"
+        className="block h-11 w-full rounded-md border border-border bg-paper-warm px-3.5 text-base font-semibold tracking-[-0.01em] placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
+      />
       <textarea
         value={content}
         onChange={(e) => {

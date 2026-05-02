@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Watermark } from "./watermark";
 import { OutlineRail } from "./outline-rail";
 import type { Heading } from "@/lib/heading-utils";
 
@@ -14,15 +13,11 @@ export function ReaderShell({
   rawHref,
   hasOutline,
   headings,
-  dashboardHref,
-  signOutAction,
   children,
 }: {
   rawHref: string;
   hasOutline: boolean;
   headings: Heading[];
-  dashboardHref?: string;
-  signOutAction?: () => Promise<void>;
   children: ReactNode;
 }) {
   const [width, setWidth] = useState<Width>("reading");
@@ -60,7 +55,7 @@ export function ReaderShell({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (document.querySelector('[data-watermark-open="true"]')) return;
+      if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
@@ -87,7 +82,7 @@ export function ReaderShell({
   return (
     <main className="relative mx-auto w-full px-6 py-10 min-[1100px]:flex min-[1100px]:justify-center min-[1100px]:gap-10">
       <div className="relative mx-auto w-full max-w-[var(--md-article-max)] min-[1100px]:mx-0">
-        {hasOutline ? (
+        {hasOutline && (
           <div
             data-outline-toggle-cluster
             className="absolute -right-2 top-0 flex items-center gap-2 sm:-right-12"
@@ -99,25 +94,6 @@ export function ReaderShell({
             >
               <OutlineIcon />
             </ToolbarIconButton>
-            <Watermark
-              variant="reader"
-              rawHref={rawHref}
-              width={width}
-              onWidthChange={pickWidth}
-              dashboardHref={dashboardHref}
-              signOutAction={signOutAction}
-            />
-          </div>
-        ) : (
-          <div className="absolute -right-2 top-0 sm:-right-12">
-            <Watermark
-              variant="reader"
-              rawHref={rawHref}
-              width={width}
-              onWidthChange={pickWidth}
-              dashboardHref={dashboardHref}
-              signOutAction={signOutAction}
-            />
           </div>
         )}
         <article className="prose max-w-none prose-pre:bg-transparent prose-pre:p-0">
@@ -133,23 +109,13 @@ export function ReaderShell({
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
               On this page
             </span>
-            <div className="flex items-center gap-2">
-              <ToolbarIconButton
-                onClick={toggleOutline}
-                label="Hide outline"
-                pressed={true}
-              >
-                <OutlineIcon />
-              </ToolbarIconButton>
-              <Watermark
-                variant="reader"
-                rawHref={rawHref}
-                width={width}
-                onWidthChange={pickWidth}
-                dashboardHref={dashboardHref}
-                signOutAction={signOutAction}
-              />
-            </div>
+            <ToolbarIconButton
+              onClick={toggleOutline}
+              label="Hide outline"
+              pressed={true}
+            >
+              <OutlineIcon />
+            </ToolbarIconButton>
           </div>
           <div className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1">
             <OutlineRail headings={headings} />
