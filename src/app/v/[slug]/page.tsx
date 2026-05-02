@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { withAuth } from "@workos-inc/authkit-nextjs";
+import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReaderShell } from "@/components/reader-shell";
@@ -54,11 +56,16 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
   const headings = parseHeadings(doc.content);
   const hasOutline = headings.filter((h) => h.level === 2).length >= 3;
 
+  const { user } = await withAuth();
+  const isAuthed = !!user && isEmailAllowed(user.email);
+
   return (
     <ReaderShell
+      slug={doc.slug}
       rawHref={`/api/raw/${doc.slug}`}
       hasOutline={hasOutline}
       headings={headings}
+      isAuthed={isAuthed}
     >
       <MarkdownRenderer content={doc.content} />
     </ReaderShell>

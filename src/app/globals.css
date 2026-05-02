@@ -23,9 +23,57 @@
   display: none;
 }
 
+/* Reader article is the container for the toolbar's responsive flip */
+.reader-article {
+  container-type: inline-size;
+}
+
+/* show-outline button only renders when the rail has been collapsed */
+[data-reader-show-outline] {
+  display: none;
+}
 @media (min-width: 1100px) {
-  :root:not([data-outline-hidden]) [data-outline-toggle-cluster] {
+  :root[data-outline-hidden] .reader-article[data-has-outline="true"] [data-reader-show-outline] {
+    display: inline-flex;
+  }
+}
+
+/* Hide the surface-level toolbar cluster when the outline rail is showing
+   (rail hosts its own copy of the toolbar in its header). */
+@media (min-width: 1100px) {
+  :root:not([data-outline-hidden]) .reader-article[data-has-outline="true"] [data-reader-toolbar-cluster] {
     display: none;
+  }
+}
+
+/* Reader toolbar — horizontal default; flips vertical when the article
+   container narrows past ~720px so the cluster doesn't collide with the H1. */
+@container (max-width: 720px) {
+  .reader-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .reader-toolbar__width-pill {
+    flex-direction: column;
+    height: auto;
+    width: 32px;
+    border-radius: 6px;
+  }
+  .reader-toolbar__width-pill button {
+    padding: 0;
+    width: 100%;
+    height: 22px;
+    font-size: 0;
+    letter-spacing: 0.04em;
+  }
+  .reader-toolbar__width-pill button[data-short]::before {
+    content: attr(data-short);
+    font-size: 10px;
+    font-weight: inherit;
+  }
+  /* article wraps before reaching the vertical column */
+  .reader-article > article.prose {
+    padding-right: 56px;
   }
 }
 
