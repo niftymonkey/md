@@ -54,9 +54,9 @@ export function DropAnywhere() {
       depth = 0;
       setActive(false);
       if (!hasFiles(e)) return;
+      e.preventDefault();
       const file = e.dataTransfer?.files?.[0];
       if (!file || !isMarkdownFile(file)) return;
-      e.preventDefault();
       const text = await file.text();
       const payload: PreloadPayload = {
         content: text,

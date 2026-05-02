@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 type Width = "reading" | "wide";
 
@@ -98,10 +99,11 @@ function RawButton({ href }: { href: string }) {
 }
 
 function DashboardButton({ href }: { href: string }) {
+  const router = useRouter();
   return (
     <ToolbarButton
       label="Back to dashboard"
-      onClick={() => window.location.assign(href)}
+      onClick={() => router.push(href)}
     >
       <BackIcon />
     </ToolbarButton>

@@ -57,6 +57,7 @@ export function CmdPalette({ signOutAction }: Props) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        if (e.repeat) return;
         e.preventDefault();
         setOpen((v) => {
           if (v) {
@@ -364,6 +365,12 @@ export function CmdPalette({ signOutAction }: Props) {
           </span>
           <input
             ref={inputRef}
+            role="combobox"
+            aria-expanded="true"
+            aria-haspopup="listbox"
+            aria-controls="cmd-palette-results"
+            aria-activedescendant={totalRows > 0 ? `cmd-palette-option-${safeIndex}` : undefined}
+            aria-autocomplete="list"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -374,7 +381,7 @@ export function CmdPalette({ signOutAction }: Props) {
             className="block flex-1 bg-transparent text-base text-ink placeholder:text-muted/70 focus:outline-none"
           />
         </div>
-        <div className="max-h-[60vh] overflow-y-auto px-2 py-2">
+        <div id="cmd-palette-results" role="listbox" className="max-h-[60vh] overflow-y-auto px-2 py-2">
           {totalRows === 0 ? (
             <div className="px-3 py-6 text-center text-sm text-muted">
               {docsLoading ? "Searching…" : "No results"}
@@ -386,6 +393,7 @@ export function CmdPalette({ signOutAction }: Props) {
                   {docs.map((d, i) => (
                     <Row
                       key={d.id}
+                      id={`cmd-palette-option-${i}`}
                       selected={safeIndex === i}
                       onMouseEnter={() => setSelectedIndex(i)}
                       onClick={() => pick(i)}
@@ -403,6 +411,7 @@ export function CmdPalette({ signOutAction }: Props) {
                     return (
                       <Row
                         key={a.id}
+                        id={`cmd-palette-option-${idx}`}
                         selected={safeIndex === idx}
                         onMouseEnter={() => setSelectedIndex(idx)}
                         onClick={() => pick(idx)}
@@ -429,8 +438,8 @@ export function CmdPalette({ signOutAction }: Props) {
 
 function Group({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="px-1 pb-1.5 [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
-      <div className="px-2 pb-1 pt-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted">
+    <div role="group" aria-label={label} className="px-1 pb-1.5 [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
+      <div className="px-2 pb-1 pt-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted" aria-hidden="true">
         {label}
       </div>
       <div className="flex flex-col">{children}</div>
@@ -439,6 +448,7 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Row({
+  id,
   selected,
   onMouseEnter,
   onClick,
@@ -447,6 +457,7 @@ function Row({
   meta,
   kbd,
 }: {
+  id?: string;
   selected: boolean;
   onMouseEnter: () => void;
   onClick: () => void;
@@ -457,7 +468,10 @@ function Row({
 }) {
   return (
     <button
+      id={id}
       type="button"
+      role="option"
+      aria-selected={selected}
       onMouseEnter={onMouseEnter}
       onClick={onClick}
       data-selected={selected ? "true" : undefined}
