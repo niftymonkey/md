@@ -115,6 +115,12 @@ export function CmdPalette({ signOutAction }: Props) {
         if (window.location.pathname !== "/") router.push("/");
         return;
       }
+      if (waiting && (e.key === "n" || e.key === "N")) {
+        e.preventDefault();
+        reset();
+        if (window.location.pathname !== "/new") router.push("/new");
+        return;
+      }
       if (e.key === "g" || e.key === "G") {
         waiting = true;
         if (timer !== null) window.clearTimeout(timer);
@@ -189,17 +195,16 @@ export function CmdPalette({ signOutAction }: Props) {
     });
   }
 
-  if (!isDashboard) {
-    actions.push({
-      id: "new-document",
-      title: "New document",
-      icon: <NewIcon />,
-      run: () => {
-        close();
-        router.push("/");
-      },
-    });
-  }
+  actions.push({
+    id: "new-document",
+    title: "New document",
+    icon: <NewIcon />,
+    kbd: ["g", "n"],
+    run: () => {
+      close();
+      router.push("/new");
+    },
+  });
 
   if (isReader && docSlug) {
     actions.push({

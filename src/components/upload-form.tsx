@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { DROP_PRELOAD_EVENT, readDropPreload } from "./drop-anywhere";
 
 const MAX_BYTES = 1024 * 1024;
 const ACCEPTED_EXTENSIONS = [".md", ".markdown"];
@@ -22,6 +23,19 @@ export function UploadForm() {
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    function applyPreload() {
+      const payload = readDropPreload();
+      if (!payload) return;
+      setContent(payload.content);
+      if (payload.title) setTitle(payload.title);
+      setError(null);
+    }
+    applyPreload();
+    window.addEventListener(DROP_PRELOAD_EVENT, applyPreload);
+    return () => window.removeEventListener(DROP_PRELOAD_EVENT, applyPreload);
+  }, []);
 
   async function readFileAsText(file: File): Promise<string> {
     if (!isAcceptedFile(file)) {
