@@ -90,36 +90,9 @@ export function ReaderShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawHref, width, hasOutline, isAuthed, slug]);
 
-  const toolbar = (
-    <ReaderToolbar
-      width={width}
-      onWidthChange={pickWidth}
-      rawHref={rawHref}
-      dashboardHref={dashboardHref}
-    />
-  );
-
   return (
-    <main className="reader-main relative mx-auto w-full px-6 py-10 min-[1100px]:flex min-[1100px]:justify-center min-[1100px]:gap-10">
-      <div
-        className="reader-article relative mx-auto w-full max-w-[var(--md-article-max)] min-[1100px]:mx-0"
-        data-has-outline={hasOutline ? "true" : undefined}
-      >
-        <div data-reader-toolbar-cluster className="absolute right-0 top-0 z-10 flex items-center gap-2 sm:-right-2">
-          {hasOutline && (
-            <button
-              type="button"
-              data-reader-show-outline
-              onClick={toggleOutline}
-              aria-label="Show outline"
-              title="Show outline"
-              className="grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-200 hover:border-ochre hover:text-ochre"
-            >
-              <OutlineIcon />
-            </button>
-          )}
-          {toolbar}
-        </div>
+    <main className="reader-main mx-auto flex w-full justify-center gap-6 px-6 py-10">
+      <div className="reader-article relative w-full min-w-0 max-w-[var(--md-article-max)]">
         <article className="prose max-w-none prose-pre:bg-transparent prose-pre:p-0">
           {children}
         </article>
@@ -127,31 +100,41 @@ export function ReaderShell({
       {hasOutline && (
         <aside
           data-outline-aside
-          className="hidden min-[1100px]:block min-[1100px]:w-60 min-[1100px]:shrink-0 min-[1100px]:sticky min-[1100px]:top-10 min-[1100px]:self-start"
+          className="hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
         >
-          <div className="flex items-center justify-between gap-3 pb-3 pt-1">
+          <div className="pb-3 pt-1.5">
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
               On this page
             </span>
-            <div className="flex items-center gap-2">
-              {toolbar}
-              <button
-                type="button"
-                onClick={toggleOutline}
-                aria-label="Hide outline"
-                title="Hide outline"
-                aria-pressed={true}
-                className="grid size-8 cursor-pointer place-items-center rounded-md border border-ochre bg-ochre text-paper transition-[border-color] duration-200"
-              >
-                <OutlineIcon />
-              </button>
-            </div>
           </div>
           <div className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1">
             <OutlineRail headings={headings} />
           </div>
         </aside>
       )}
+      <div
+        data-reader-toolbar-cluster
+        className="hidden flex-col items-center gap-1.5 sm:sticky sm:top-14 sm:flex sm:shrink-0 sm:self-start"
+      >
+        {hasOutline && (
+          <button
+            type="button"
+            onClick={toggleOutline}
+            aria-label={outlineShown ? "Hide outline" : "Show outline"}
+            title={outlineShown ? "Hide outline" : "Show outline"}
+            aria-pressed={outlineShown}
+            className="grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre aria-pressed:border-ochre aria-pressed:bg-ochre aria-pressed:text-paper aria-pressed:hover:text-paper"
+          >
+            <OutlineIcon />
+          </button>
+        )}
+        <ReaderToolbar
+          width={width}
+          onWidthChange={pickWidth}
+          rawHref={rawHref}
+          dashboardHref={dashboardHref}
+        />
+      </div>
     </main>
   );
 }

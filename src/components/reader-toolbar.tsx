@@ -18,7 +18,7 @@ export function ReaderToolbar({
   dashboardHref,
 }: Props) {
   return (
-    <div className="reader-toolbar flex items-center gap-2">
+    <div className="reader-toolbar flex flex-col items-center gap-1.5">
       <WidthPill value={width} onChange={onWidthChange} />
       <CopyLinkButton />
       <RawButton href={rawHref} />
@@ -38,20 +38,20 @@ function WidthPill({
     <div
       role="group"
       aria-label="Article width"
-      className="reader-toolbar__width-pill flex h-7 shrink-0 overflow-hidden rounded-full border border-border bg-paper"
+      className="reader-toolbar__width-pill flex w-8 flex-col overflow-hidden rounded-md border border-border bg-paper"
     >
       {(["reading", "wide"] as const).map((w) => (
         <button
           key={w}
           type="button"
           data-active={value === w ? "true" : undefined}
-          data-short={w === "reading" ? "R" : "W"}
           onClick={() => onChange(w)}
           aria-label={`Width: ${w}`}
+          title={w === "reading" ? "Reading width" : "Wide width"}
           aria-pressed={value === w}
-          className="cursor-pointer border-0 bg-transparent px-2.5 font-mono text-[0.625rem] font-medium tracking-[0.04em] text-muted aria-pressed:bg-ochre aria-pressed:font-semibold aria-pressed:text-paper"
+          className="cursor-pointer border-0 bg-transparent py-1 font-mono text-[0.625rem] font-medium leading-none tracking-[0.04em] text-muted aria-pressed:bg-ochre aria-pressed:font-semibold aria-pressed:text-paper"
         >
-          {w}
+          {w === "reading" ? "R" : "W"}
         </button>
       ))}
     </div>
