@@ -321,13 +321,15 @@ export function CmdPalette({ signOutAction }: Props) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((i) =>
-          totalRows === 0 ? 0 : Math.min(totalRows - 1, i + 1),
+          totalRows === 0 ? 0 : (i + 1) % totalRows,
         );
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedIndex((i) => Math.max(0, i - 1));
+        setSelectedIndex((i) =>
+          totalRows === 0 ? 0 : (i - 1 + totalRows) % totalRows,
+        );
         return;
       }
       if (e.key === "Enter") {
