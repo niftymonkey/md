@@ -61,6 +61,26 @@ export function ReaderShell({
   }
 
   useEffect(() => {
+    document.documentElement.setAttribute("data-scrolling", "1");
+    let timer = window.setTimeout(() => {
+      document.documentElement.removeAttribute("data-scrolling");
+    }, 1500);
+    function onScroll() {
+      document.documentElement.setAttribute("data-scrolling", "1");
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        document.documentElement.removeAttribute("data-scrolling");
+      }, 1500);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timer);
+      document.documentElement.removeAttribute("data-scrolling");
+    };
+  }, []);
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
@@ -107,7 +127,10 @@ export function ReaderShell({
               On this page
             </span>
           </div>
-          <div className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1">
+          <div
+            data-outline-scroll
+            className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1"
+          >
             <OutlineRail headings={headings} />
           </div>
         </aside>

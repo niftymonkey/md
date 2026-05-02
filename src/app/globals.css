@@ -19,10 +19,39 @@
   --md-article-max: 110ch;
 }
 
-/* Outline rail — hide the aside when collapsed. The toolbar's outline-toggle
-   button stays put in the toolbar column either way; only the rail vanishes. */
+/* Outline rail — hide the aside when collapsed. */
 :root[data-outline-hidden] [data-outline-aside] {
   display: none;
+}
+
+/* Outline rail's internal scrollbar — invisible at rest; appears tinted (not
+   the bright browser default) while the page is scrolling or while hovered. */
+[data-outline-scroll] {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 240ms ease-out;
+}
+:root[data-scrolling] [data-outline-scroll],
+[data-outline-scroll]:hover {
+  scrollbar-color: var(--border) transparent;
+}
+[data-outline-scroll]::-webkit-scrollbar {
+  width: 6px;
+}
+[data-outline-scroll]::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-outline-scroll]::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background-color 240ms ease-out;
+}
+:root[data-scrolling] [data-outline-scroll]::-webkit-scrollbar-thumb,
+[data-outline-scroll]:hover::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+[data-outline-scroll]:hover::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 :root[data-platform="mac"] [data-key-other],
