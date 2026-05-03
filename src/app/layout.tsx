@@ -10,6 +10,7 @@ import { prefsToHtmlAttrs } from "@/lib/prefs-html-attrs";
 import { buildPreHydrationScript } from "@/lib/pre-hydration-script";
 import { DevThemeSwitcher } from "@/components/dev-theme-switcher";
 import { CmdPalette } from "@/components/cmd-palette";
+import { HotkeyCheatSheet } from "@/components/hotkey-cheat-sheet";
 import { BrandMark } from "@/components/brand-mark";
 import { DropAnywhere } from "@/components/drop-anywhere";
 import "./globals.css";
@@ -63,6 +64,7 @@ export default async function RootLayout({
         <BrandMark />
         {process.env.NODE_ENV === "development" && <DevThemeSwitcher />}
         {showPalette && <CmdPalette signOutAction={signOutAction} />}
+        <HotkeyCheatSheet isAuthed={isAuthorized} />
         {showPalette && <DropAnywhere />}
       </body>
     </html>

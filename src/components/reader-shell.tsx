@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { OutlineRail } from "./outline-rail";
 import { ReaderToolbar } from "./reader-toolbar";
@@ -35,6 +35,15 @@ export function ReaderShell({
   const router = useRouter();
   const dashboardHref = isAuthed ? "/" : undefined;
   const [, startTransition] = useTransition();
+  const keyStateRef = useRef<{
+    rawHref: string;
+    width: Width;
+    isAuthed: boolean;
+    slug: string;
+    router: ReturnType<typeof useRouter>;
+    pickWidth: (next: Width) => void;
+    toggleOutline: () => void;
+  } | null>(null);
 
   // One-shot sync from localStorage (the unauth source of truth) after
   // hydration, since the server can't read it. Visual is already correct via
@@ -108,6 +117,18 @@ export function ReaderShell({
   }
 
   useEffect(() => {
+    keyStateRef.current = {
+      rawHref,
+      width,
+      isAuthed,
+      slug,
+      router,
+      pickWidth,
+      toggleOutline,
+    };
+  });
+
+  useEffect(() => {
     document.documentElement.setAttribute("data-scrolling", "1");
     let timer = window.setTimeout(() => {
       document.documentElement.removeAttribute("data-scrolling");
@@ -129,33 +150,40 @@ export function ReaderShell({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const state = keyStateRef.current;
+      if (!state) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
+      if (document.documentElement.dataset.hotkeysOpen === "true") return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
       switch (e.key) {
         case "r":
-          window.location.assign(rawHref);
+        case "R":
+          window.location.assign(state.rawHref);
           break;
         case "c":
+        case "C":
           void navigator.clipboard.writeText(window.location.href);
           break;
         case "w":
-          pickWidth(width === "reading" ? "wide" : "reading");
+        case "W":
+          state.pickWidth(state.width === "reading" ? "wide" : "reading");
           break;
         case "o":
-          toggleOutline();
+        case "O":
+          state.toggleOutline();
           break;
         case "e":
-          if (isAuthed) router.push(`/edit/${slug}`);
+        case "E":
+          if (state.isAuthed) state.router.push(`/edit/${state.slug}`);
           break;
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawHref, width, hasOutline, isAuthed, slug]);
+  }, []);
 
   return (
     <main className="reader-main mx-auto flex w-full justify-center gap-6 px-6 py-10">
@@ -192,7 +220,7 @@ export function ReaderShell({
             data-outline-toggle
             onClick={toggleOutline}
             aria-label={outlineShown ? "Hide outline" : "Show outline"}
-            title={outlineShown ? "Hide outline" : "Show outline"}
+            title={outlineShown ? "Hide outline (o)" : "Show outline (o)"}
             aria-pressed={outlineShown}
             className="reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
           >
@@ -204,6 +232,7 @@ export function ReaderShell({
           onWidthChange={pickWidth}
           rawHref={rawHref}
           dashboardHref={dashboardHref}
+          editHref={isAuthed ? `/edit/${slug}` : undefined}
         />
       </div>
     </main>
