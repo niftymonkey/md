@@ -225,13 +225,19 @@ button:not(:disabled) {
   background: oklch(20% 0.014 240 / 0.45);
 }
 
+.hotkey-sheet-backdrop {
+  background: oklch(20% 0.014 240 / 0.45);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .cmd-palette-backdrop {
+  :root:not([data-theme="light"]) .cmd-palette-backdrop,
+  :root:not([data-theme="light"]) .hotkey-sheet-backdrop {
     background: oklch(0% 0 0 / 0.6);
   }
 }
 
-:root[data-theme="dark"] .cmd-palette-backdrop {
+:root[data-theme="dark"] .cmd-palette-backdrop,
+:root[data-theme="dark"] .hotkey-sheet-backdrop {
   background: oklch(0% 0 0 / 0.6);
 }
 

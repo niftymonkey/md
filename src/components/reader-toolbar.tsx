@@ -10,6 +10,7 @@ type Props = {
   onWidthChange: (next: Width) => void;
   rawHref: string;
   dashboardHref?: string;
+  editHref?: string;
 };
 
 export function ReaderToolbar({
@@ -17,10 +18,12 @@ export function ReaderToolbar({
   onWidthChange,
   rawHref,
   dashboardHref,
+  editHref,
 }: Props) {
   return (
     <div className="reader-toolbar flex flex-col items-center gap-1.5">
       <WidthPill value={width} onChange={onWidthChange} />
+      {editHref && <EditButton href={editHref} />}
       <CopyLinkButton />
       <RawButton href={rawHref} />
       {dashboardHref && <DashboardButton href={dashboardHref} />}
@@ -48,7 +51,7 @@ function WidthPill({
           data-width-pill={w}
           onClick={() => onChange(w)}
           aria-label={`Width: ${w}`}
-          title={w === "reading" ? "Reading width" : "Wide width"}
+          title={w === "reading" ? "Reading width (w)" : "Wide width (w)"}
           aria-pressed={value === w}
           className="reader-toolbar__width-btn cursor-pointer border-0 bg-transparent py-1 font-mono text-[0.625rem] font-medium leading-none tracking-[0.04em] text-muted"
         >
@@ -79,7 +82,7 @@ function CopyLinkButton() {
   return (
     <ToolbarButton
       onClick={copy}
-      label={copied ? "Copied" : "Copy link"}
+      label={copied ? "Copied" : "Copy link (c)"}
       data-copied={copied ? "true" : undefined}
     >
       {copied ? <CheckIcon /> : <LinkIcon />}
@@ -90,10 +93,22 @@ function CopyLinkButton() {
 function RawButton({ href }: { href: string }) {
   return (
     <ToolbarButton
-      label="View raw"
+      label="View raw (r)"
       onClick={() => window.location.assign(href)}
     >
       <RawIcon />
+    </ToolbarButton>
+  );
+}
+
+function EditButton({ href }: { href: string }) {
+  const router = useRouter();
+  return (
+    <ToolbarButton
+      label="Edit (e)"
+      onClick={() => router.push(href)}
+    >
+      <EditIcon />
     </ToolbarButton>
   );
 }
@@ -170,6 +185,15 @@ function RawIcon() {
     <svg {...strokeProps()}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <path d="M14 2v6h6" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
     </svg>
   );
 }

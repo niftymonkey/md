@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const PALETTE_OPEN_EVENT = "md:cmd-palette:open";
 const SEARCH_DEBOUNCE_MS = 120;
-const RESULT_LIMIT = 8;
+const RECENT_LIMIT = 3;
+const SEARCH_LIMIT = 8;
 
 type DocResult = {
   id: string;
@@ -17,7 +18,6 @@ type ActionItem = {
   id: string;
   title: string;
   icon: ReactNode;
-  kbd?: string[];
   run: () => void | Promise<void>;
 };
 
@@ -44,7 +44,6 @@ export function CmdPalette({ signOutAction }: Props) {
     close: () => {},
   });
   const router = useRouter();
-  const pathname = usePathname() ?? "/";
 
   function close() {
     setQuery("");
@@ -110,6 +109,10 @@ export function CmdPalette({ signOutAction }: Props) {
         reset();
         return;
       }
+      if (document.documentElement.dataset.hotkeysOpen === "true") {
+        reset();
+        return;
+      }
       if (waiting && (e.key === "d" || e.key === "D")) {
         e.preventDefault();
         reset();
@@ -151,9 +154,10 @@ export function CmdPalette({ signOutAction }: Props) {
   useEffect(() => {
     if (!open) return;
     const trimmed = query.trim();
+    const limit = trimmed ? SEARCH_LIMIT : RECENT_LIMIT;
     const url = trimmed
-      ? `/api/list?search=${encodeURIComponent(trimmed)}&limit=${RESULT_LIMIT}`
-      : `/api/list?limit=${RESULT_LIMIT}`;
+      ? `/api/list?search=${encodeURIComponent(trimmed)}&limit=${limit}`
+      : `/api/list?limit=${limit}`;
     const ctrl = new AbortController();
     const handle = window.setTimeout(() => {
       setDocsLoading(true);
@@ -174,94 +178,8 @@ export function CmdPalette({ signOutAction }: Props) {
     };
   }, [open, query]);
 
-  const isDashboard = pathname === "/";
-  const isReader = pathname.startsWith("/v/");
-  const isEdit = pathname.startsWith("/edit/");
-  const isSettings = pathname === "/settings";
-  const docSlug =
-    isReader || isEdit ? decodeURIComponent(pathname.split("/")[2] ?? "") : "";
-
-  const actions: ActionItem[] = [];
-
-  if (!isDashboard) {
-    actions.push({
-      id: "go-dashboard",
-      title: "Back to dashboard",
-      icon: <BackIcon />,
-      kbd: ["g", "d"],
-      run: () => {
-        close();
-        router.push("/");
-      },
-    });
-  }
-
-  actions.push({
-    id: "new-document",
-    title: "New document",
-    icon: <NewIcon />,
-    kbd: ["g", "n"],
-    run: () => {
-      close();
-      router.push("/new");
-    },
-  });
-
-  if (isReader && docSlug) {
-    actions.push({
-      id: "edit-doc",
-      title: "Edit this document",
-      icon: <EditIcon />,
-      run: () => {
-        close();
-        router.push(`/edit/${docSlug}`);
-      },
-    });
-  }
-
-  if (isEdit && docSlug) {
-    actions.push({
-      id: "view-doc",
-      title: "View this document",
-      icon: <DocIcon />,
-      run: () => {
-        close();
-        router.push(`/v/${docSlug}`);
-      },
-    });
-  }
-
-  if (isReader && docSlug) {
-    actions.push({
-      id: "view-raw",
-      title: "View raw markdown",
-      icon: <RawIcon />,
-      run: () => {
-        close();
-        window.location.assign(`/api/raw/${docSlug}`);
-      },
-    });
-  }
-
-  if ((isReader || isEdit) && docSlug) {
-    actions.push({
-      id: "copy-link",
-      title: "Copy link to this document",
-      icon: <LinkIcon />,
-      run: async () => {
-        const url = `${window.location.origin}/v/${docSlug}`;
-        try {
-          await navigator.clipboard.writeText(url);
-        } catch {
-          // clipboard denied; silent
-        }
-        close();
-      },
-    });
-  }
-
-  if (!isSettings) {
-    actions.push({
+  const actions: ActionItem[] = [
+    {
       id: "open-settings",
       title: "Open settings",
       icon: <SettingsIcon />,
@@ -269,8 +187,8 @@ export function CmdPalette({ signOutAction }: Props) {
         close();
         router.push("/settings");
       },
-    });
-  }
+    },
+  ];
 
   if (signOutAction) {
     actions.push({
@@ -389,7 +307,7 @@ export function CmdPalette({ signOutAction }: Props) {
           ) : (
             <>
               {docs.length > 0 && (
-                <Group label="Documents">
+                <Group label={query.trim() ? "Documents" : "Recent"}>
                   {docs.map((d, i) => (
                     <Row
                       key={d.id}
@@ -417,7 +335,6 @@ export function CmdPalette({ signOutAction }: Props) {
                         onClick={() => pick(idx)}
                         icon={a.icon}
                         title={a.title}
-                        kbd={a.kbd}
                       />
                     );
                   })}
@@ -455,7 +372,6 @@ function Row({
   icon,
   title,
   meta,
-  kbd,
 }: {
   id?: string;
   selected: boolean;
@@ -464,7 +380,6 @@ function Row({
   icon: ReactNode;
   title: string;
   meta?: string;
-  kbd?: string[];
 }) {
   return (
     <button
@@ -484,18 +399,6 @@ function Row({
       {meta && (
         <span className="shrink-0 font-mono text-[0.6875rem] text-muted [font-feature-settings:'tnum']">
           {meta}
-        </span>
-      )}
-      {kbd && (
-        <span className="flex shrink-0 items-center gap-1">
-          {kbd.map((k, i) => (
-            <kbd
-              key={i}
-              className="rounded-[3px] border border-border px-[5px] py-[1px] font-mono text-[0.6875rem] font-medium text-muted"
-            >
-              {k}
-            </kbd>
-          ))}
         </span>
       )}
     </button>
@@ -556,17 +459,6 @@ function DocIcon() {
   );
 }
 
-function NewIcon() {
-  return (
-    <svg {...strokeProps("size-3.5")}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-      <line x1="12" y1="12" x2="12" y2="18" />
-      <line x1="9" y1="15" x2="15" y2="15" />
-    </svg>
-  );
-}
-
 function SettingsIcon() {
   return (
     <svg {...strokeProps("size-3.5")}>
@@ -582,42 +474,6 @@ function SignOutIcon() {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg {...strokeProps("size-3.5")}>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
-    </svg>
-  );
-}
-
-function RawIcon() {
-  return (
-    <svg {...strokeProps("size-3.5")}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg {...strokeProps("size-3.5")}>
-      <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07L11 5" />
-      <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07L13 19" />
-    </svg>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg {...strokeProps("size-3.5")}>
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
     </svg>
   );
 }

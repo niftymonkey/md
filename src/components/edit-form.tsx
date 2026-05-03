@@ -106,6 +106,7 @@ export function EditForm({
       }
       if (e.key === "Escape") {
         if (document.documentElement.dataset.cmdPaletteOpen === "true") return;
+        if (document.documentElement.dataset.hotkeysOpen === "true") return;
         const target = e.target as HTMLElement | null;
         const tag = target?.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA") {
@@ -165,6 +166,14 @@ export function EditForm({
           {statusLabel}
         </span>
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => router.push(`/v/${slug}`)}
+            title="View document"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-paper px-3 py-1.5 text-[0.8125rem] font-semibold text-ink transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
+          >
+            View
+          </button>
           <button
             type="button"
             onClick={cancel}
