@@ -4,7 +4,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { signOutAction } from "@/lib/auth-actions";
 import { DocList } from "@/components/doc-list";
-import { MobileBar } from "@/components/mobile-bar";
+import { MobileBar, MobileBarLink, PlusGlyph } from "@/components/mobile-bar";
 
 export default async function Home() {
   const { user } = await withAuth();
@@ -82,26 +82,9 @@ export default async function Home() {
       </div>
       <DocList ownerId={user.id} />
       <MobileBar palette>
-        <Link
-          href="/new"
-          aria-label="New document"
-          className="grid size-11 cursor-pointer place-items-center rounded-md border border-ink bg-ink text-paper transition-colors hover:bg-ochre-deep hover:border-ochre-deep"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-[18px]"
-            aria-hidden="true"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </Link>
+        <MobileBarLink href="/new" label="New document" variant="primary">
+          <PlusGlyph />
+        </MobileBarLink>
       </MobileBar>
     </main>
   );
