@@ -127,11 +127,11 @@ a shared link can only scroll.
    Threshold and timing match the existing reader scroll-listener in
    `reader-shell.tsx` to avoid a second scroll listener.
 
-8. **Brand-mark stays.** The non-interactive `md.niftymonkey.dev`
-   wordmark in `src/components/brand-mark.tsx` (mounted in `layout.tsx`)
-   continues to live `fixed bottom-4 left-4` on desktop. On mobile it
-   either moves into the bar or repositions top-left at low opacity —
-   resolved during implementation, not a load-bearing decision here.
+8. **Brand-mark is desktop-only.** The non-interactive
+   `md.niftymonkey.dev` wordmark in `src/components/brand-mark.tsx`
+   remains `fixed bottom-4 left-4` on desktop and is hidden at `<md:`
+   (the bar would otherwise occlude it). Component still mounts in
+   `layout.tsx`; visibility is controlled by responsive classes.
    (Not to be confused with the removed `Watermark` popover from #36.)
 
 9. **Cheat-sheet hidden at `<md:`.** No mount, no `?` listener on

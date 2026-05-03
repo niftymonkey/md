@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export function RowKebabMenu({ slug, title }: { slug: string; title: string }) {
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -30,27 +32,35 @@ export function RowKebabMenu({ slug, title }: { slug: string; title: string }) {
   }, [open]);
 
   async function onDelete() {
+    if (busy) return;
     setOpen(false);
     if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    let response: Response;
+    setBusy(true);
     try {
-      response = await fetch(`/api/docs/${slug}`, { method: "DELETE" });
-    } catch {
-      window.alert("Network error");
-      return;
-    }
-    if (!response.ok) {
-      let message = `Delete failed (${response.status})`;
+      let response: Response;
       try {
-        const data = await response.json();
-        if (data?.error) message = data.error;
+        response = await fetch(`/api/docs/${slug}`, { method: "DELETE" });
       } catch {
-        // ignore parse failure
+        window.alert("Network error");
+        return;
       }
-      window.alert(message);
-      return;
+      if (!response.ok) {
+        let message = `Delete failed (${response.status})`;
+        try {
+          const data = await response.json();
+          if (data?.error) message = data.error;
+        } catch {
+          // ignore parse failure
+        }
+        window.alert(message);
+        return;
+      }
+      startTransition(() => {
+        router.refresh();
+      });
+    } finally {
+      setBusy(false);
     }
-    router.refresh();
   }
 
   return (
@@ -85,7 +95,8 @@ export function RowKebabMenu({ slug, title }: { slug: string; title: string }) {
             type="button"
             role="menuitem"
             onClick={onDelete}
-            className="flex w-full cursor-pointer items-center gap-2.5 border-t border-border px-3 py-2.5 text-left text-sm text-ink transition-colors hover:bg-paper-warm"
+            disabled={busy || isPending}
+            className="flex w-full cursor-pointer items-center gap-2.5 border-t border-border px-3 py-2.5 text-left text-sm text-ink transition-colors hover:bg-paper-warm disabled:cursor-not-allowed disabled:opacity-50"
           >
             <DeleteIcon />
             <span>Delete</span>
