@@ -14,7 +14,6 @@ const OUTLINE_KEY = "md.outline.shown";
 export function ReaderShell({
   slug,
   rawHref,
-  hasOutline,
   headings,
   isAuthed,
   initialWidth,
@@ -23,7 +22,6 @@ export function ReaderShell({
 }: {
   slug: string;
   rawHref: string;
-  hasOutline: boolean;
   headings: Heading[];
   isAuthed: boolean;
   initialWidth: Width;
@@ -56,11 +54,9 @@ export function ReaderShell({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWidth(stored);
     }
-    if (hasOutline) {
-      const o = localStorage.getItem(OUTLINE_KEY);
-      if (o !== null) setOutlineShown(o === "true");
-    }
-  }, [isAuthed, hasOutline]);
+    const o = localStorage.getItem(OUTLINE_KEY);
+    if (o !== null) setOutlineShown(o === "true");
+  }, [isAuthed]);
 
   function applyWidthAttr(value: Width) {
     if (value === "wide") {
@@ -97,7 +93,6 @@ export function ReaderShell({
   }
 
   function toggleOutline() {
-    if (!hasOutline) return;
     const previous = outlineShown;
     const next = !outlineShown;
     setOutlineShown(next);
@@ -192,41 +187,45 @@ export function ReaderShell({
           {children}
         </article>
       </div>
-      {hasOutline && (
-        <aside
-          data-outline-aside
-          className="hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
+      <aside
+        data-outline-aside
+        className={
+          outlineShown
+            ? "hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
+            : "hidden"
+        }
+      >
+        <div className="pb-3 pt-1.5">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
+            On this page
+          </span>
+        </div>
+        <div
+          data-outline-scroll
+          className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1"
         >
-          <div className="pb-3 pt-1.5">
-            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
-              On this page
-            </span>
-          </div>
-          <div
-            data-outline-scroll
-            className="max-h-[calc(100vh-8rem)] overflow-y-auto pr-1"
-          >
-            <OutlineRail headings={headings} />
-          </div>
-        </aside>
-      )}
+          <OutlineRail headings={headings} />
+        </div>
+      </aside>
       <div
         data-reader-toolbar-cluster
         className="hidden flex-col items-center gap-1.5 sm:sticky sm:top-14 sm:flex sm:shrink-0 sm:self-start"
       >
-        {hasOutline && (
-          <button
-            type="button"
-            data-outline-toggle
-            onClick={toggleOutline}
-            aria-label={outlineShown ? "Hide outline" : "Show outline"}
-            title={outlineShown ? "Hide outline (o)" : "Show outline (o)"}
-            aria-pressed={outlineShown}
-            className="reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
-          >
-            <OutlineIcon />
-          </button>
-        )}
+        <button
+          type="button"
+          data-outline-toggle={outlineShown ? "true" : undefined}
+          onClick={toggleOutline}
+          aria-label={outlineShown ? "Hide outline" : "Show outline"}
+          title={outlineShown ? "Hide outline (o)" : "Show outline (o)"}
+          aria-pressed={outlineShown}
+          className={
+            outlineShown
+              ? "reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-ochre bg-ochre text-paper transition-[background-color,border-color,color] duration-200 hover:text-paper"
+              : "reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
+          }
+        >
+          <OutlineIcon />
+        </button>
         <ReaderToolbar
           width={width}
           onWidthChange={pickWidth}

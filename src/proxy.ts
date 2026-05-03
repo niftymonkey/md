@@ -4,15 +4,6 @@ export default authkitProxy();
 
 export const config = {
   matcher: [
-    "/",
-    "/new",
-    "/v/:slug*",
-    "/edit/:slug*",
-    "/settings",
-    "/api/upload",
-    "/api/docs/:slug*",
-    "/api/list",
-    "/api/tokens",
-    "/api/tokens/:id*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

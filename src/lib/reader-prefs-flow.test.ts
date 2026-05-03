@@ -56,7 +56,7 @@ describe("unauthed reader-prefs flow contract", () => {
     expect(script).toContain("md.outline.shown");
   });
 
-  it("resolveReaderPrefsFromPrefs falls back to width=reading + outline-shown=hasOutline", () => {
+  it("resolveReaderPrefsFromPrefs falls back to width=reading + outline-shown=autoShowEligible", () => {
     expect(resolveReaderPrefsFromPrefs(null, true)).toEqual({
       initialWidth: "reading",
       initialOutlineShown: true,

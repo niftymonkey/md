@@ -17,13 +17,24 @@ export function parseHeadings(markdown: string): Heading[] {
   const lines = markdown.split("\n");
   const headings: Heading[] = [];
   const seen = new Map<string, number>();
-  let inFence = false;
+  let fence: { marker: "`" | "~"; length: number } | null = null;
   for (const line of lines) {
-    if (line.startsWith("```")) {
-      inFence = !inFence;
+    const fenceMatch = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+    if (fenceMatch) {
+      const markerRun = fenceMatch[2];
+      const marker = markerRun[0] as "`" | "~";
+      const length = markerRun.length;
+      const rest = fenceMatch[3].trim();
+      if (!fence) {
+        fence = { marker, length };
+        continue;
+      }
+      if (marker === fence.marker && length >= fence.length && rest === "") {
+        fence = null;
+      }
       continue;
     }
-    if (inFence) continue;
+    if (fence) continue;
     const m = /^(#{2,3}) (.+?)\s*#*\s*$/.exec(line);
     if (!m) continue;
     const level = m[1].length === 2 ? 2 : 3;
@@ -36,6 +47,12 @@ export function parseHeadings(markdown: string): Heading[] {
     headings.push({ id, level, text });
   }
   return headings;
+}
+
+export function shouldAutoShowOutline(headings: Heading[]): boolean {
+  const h2Count = headings.filter((h) => h.level === 2).length;
+  const h3Count = headings.length - h2Count;
+  return h2Count >= 2 || (h2Count >= 1 && h3Count >= 3);
 }
 
 export function rehypeHeadingIds() {
