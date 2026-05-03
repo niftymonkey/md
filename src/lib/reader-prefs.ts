@@ -35,6 +35,13 @@ export async function resolveReaderPrefs(args: {
   userId: string | null;
   hasOutline: boolean;
 }): Promise<ResolvedReaderPrefs> {
-  const prefs = args.userId ? await getUserPreferences(args.userId) : null;
+  let prefs: UserPreferences | null = null;
+  if (args.userId) {
+    try {
+      prefs = await getUserPreferences(args.userId);
+    } catch (err) {
+      console.warn("[reader-prefs] getUserPreferences failed:", err);
+    }
+  }
   return resolveReaderPrefsFromPrefs(prefs, args.hasOutline);
 }

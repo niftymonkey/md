@@ -53,13 +53,34 @@ export function ReaderShell({
     }
   }, [isAuthed, hasOutline]);
 
+  function applyWidthAttr(value: Width) {
+    if (value === "wide") {
+      document.documentElement.setAttribute("data-width", "wide");
+    } else {
+      document.documentElement.removeAttribute("data-width");
+    }
+  }
+
+  function applyOutlineAttr(visible: boolean) {
+    if (visible) {
+      document.documentElement.removeAttribute("data-outline-hidden");
+    } else {
+      document.documentElement.setAttribute("data-outline-hidden", "1");
+    }
+  }
+
   function pickWidth(next: Width) {
+    const previous = width;
     setWidth(next);
-    if (next === "wide") document.documentElement.setAttribute("data-width", "wide");
-    else document.documentElement.removeAttribute("data-width");
+    applyWidthAttr(next);
     if (isAuthed) {
       startTransition(async () => {
-        await saveReadingPrefs({ defaultWidth: next });
+        const result = await saveReadingPrefs({ defaultWidth: next });
+        if (!result.ok) {
+          console.warn("[reader] saveReadingPrefs failed:", result.error);
+          setWidth(previous);
+          applyWidthAttr(previous);
+        }
       });
     } else {
       localStorage.setItem(WIDTH_KEY, next);
@@ -68,13 +89,18 @@ export function ReaderShell({
 
   function toggleOutline() {
     if (!hasOutline) return;
+    const previous = outlineShown;
     const next = !outlineShown;
     setOutlineShown(next);
-    if (next) document.documentElement.removeAttribute("data-outline-hidden");
-    else document.documentElement.setAttribute("data-outline-hidden", "1");
+    applyOutlineAttr(next);
     if (isAuthed) {
       startTransition(async () => {
-        await saveReadingPrefs({ autoShowOutline: next });
+        const result = await saveReadingPrefs({ autoShowOutline: next });
+        if (!result.ok) {
+          console.warn("[reader] saveReadingPrefs failed:", result.error);
+          setOutlineShown(previous);
+          applyOutlineAttr(previous);
+        }
       });
     } else {
       localStorage.setItem(OUTLINE_KEY, String(next));

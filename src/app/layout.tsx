@@ -37,7 +37,14 @@ export default async function RootLayout({
   const { user } = await withAuth();
   const isAuthorized = user !== null && isEmailAllowed(user.email);
   const showPalette = isAuthorized;
-  const prefs = isAuthorized ? await getUserPreferences(user.id) : null;
+  let prefs = null;
+  if (isAuthorized) {
+    try {
+      prefs = await getUserPreferences(user.id);
+    } catch (err) {
+      console.warn("[layout] getUserPreferences failed:", err);
+    }
+  }
   const prefAttrs = prefsToHtmlAttrs(prefs);
   const preHydrationScript = buildPreHydrationScript(isAuthorized);
 
