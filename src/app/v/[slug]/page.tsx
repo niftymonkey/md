@@ -6,6 +6,7 @@ import { getDocBySlug } from "@/lib/db";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReaderShell } from "@/components/reader-shell";
 import { parseHeadings } from "@/lib/heading-utils";
+import { resolveReaderPrefs } from "@/lib/reader-prefs";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -58,6 +59,10 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
 
   const { user } = await withAuth();
   const isAuthed = !!user && isEmailAllowed(user.email);
+  const { initialWidth, initialOutlineShown } = await resolveReaderPrefs({
+    userId: isAuthed ? user!.id : null,
+    hasOutline,
+  });
 
   return (
     <ReaderShell
@@ -66,6 +71,8 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
       hasOutline={hasOutline}
       headings={headings}
       isAuthed={isAuthed}
+      initialWidth={initialWidth}
+      initialOutlineShown={initialOutlineShown}
     >
       <MarkdownRenderer content={doc.content} />
     </ReaderShell>

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { OutlineRail } from "./outline-rail";
 import { ReaderToolbar } from "./reader-toolbar";
+import { saveReadingPrefs } from "@/app/settings/actions";
 import type { Heading } from "@/lib/heading-utils";
-
-type Width = "reading" | "wide";
+import type { Width } from "@/lib/user-preferences";
 
 const WIDTH_KEY = "md.width";
 const OUTLINE_KEY = "md.outline.shown";
@@ -17,6 +17,8 @@ export function ReaderShell({
   hasOutline,
   headings,
   isAuthed,
+  initialWidth,
+  initialOutlineShown,
   children,
 }: {
   slug: string;
@@ -24,40 +26,59 @@ export function ReaderShell({
   hasOutline: boolean;
   headings: Heading[];
   isAuthed: boolean;
+  initialWidth: Width;
+  initialOutlineShown: boolean;
   children: ReactNode;
 }) {
-  const [width, setWidth] = useState<Width>("reading");
-  const [outlineShown, setOutlineShown] = useState(hasOutline);
+  const [width, setWidth] = useState<Width>(initialWidth);
+  const [outlineShown, setOutlineShown] = useState(initialOutlineShown);
   const router = useRouter();
   const dashboardHref = isAuthed ? "/" : undefined;
+  const [, startTransition] = useTransition();
 
+  // One-shot sync from localStorage (the unauth source of truth) after
+  // hydration, since the server can't read it. Visual is already correct via
+  // CSS keyed on :root[data-width] / :root[data-outline-hidden] — this just
+  // keeps React state honest for the keyboard handlers below.
   useEffect(() => {
-    const w = localStorage.getItem(WIDTH_KEY) as Width | null;
-    if (w === "reading" || w === "wide") setWidth(w);
+    if (isAuthed) return;
+    const stored = localStorage.getItem(WIDTH_KEY) as Width | null;
+    if (stored === "reading" || stored === "wide") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWidth(stored);
+    }
     if (hasOutline) {
       const o = localStorage.getItem(OUTLINE_KEY);
       if (o !== null) setOutlineShown(o === "true");
-    } else {
-      setOutlineShown(false);
     }
-  }, [hasOutline]);
+  }, [isAuthed, hasOutline]);
 
   function pickWidth(next: Width) {
     setWidth(next);
-    localStorage.setItem(WIDTH_KEY, next);
     if (next === "wide") document.documentElement.setAttribute("data-width", "wide");
     else document.documentElement.removeAttribute("data-width");
+    if (isAuthed) {
+      startTransition(async () => {
+        await saveReadingPrefs({ defaultWidth: next });
+      });
+    } else {
+      localStorage.setItem(WIDTH_KEY, next);
+    }
   }
 
   function toggleOutline() {
     if (!hasOutline) return;
-    setOutlineShown((prev) => {
-      const next = !prev;
+    const next = !outlineShown;
+    setOutlineShown(next);
+    if (next) document.documentElement.removeAttribute("data-outline-hidden");
+    else document.documentElement.setAttribute("data-outline-hidden", "1");
+    if (isAuthed) {
+      startTransition(async () => {
+        await saveReadingPrefs({ autoShowOutline: next });
+      });
+    } else {
       localStorage.setItem(OUTLINE_KEY, String(next));
-      if (next) document.documentElement.removeAttribute("data-outline-hidden");
-      else document.documentElement.setAttribute("data-outline-hidden", "1");
-      return next;
-    });
+    }
   }
 
   useEffect(() => {
@@ -142,11 +163,12 @@ export function ReaderShell({
         {hasOutline && (
           <button
             type="button"
+            data-outline-toggle
             onClick={toggleOutline}
             aria-label={outlineShown ? "Hide outline" : "Show outline"}
             title={outlineShown ? "Hide outline" : "Show outline"}
             aria-pressed={outlineShown}
-            className="grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre aria-pressed:border-ochre aria-pressed:bg-ochre aria-pressed:text-paper aria-pressed:hover:text-paper"
+            className="reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
           >
             <OutlineIcon />
           </button>

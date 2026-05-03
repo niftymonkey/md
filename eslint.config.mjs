@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Claude Code skills ship minified UMD bundles and dev scripts
+    // that aren't part of the app surface; lint shouldn't gate on them.
+    ".claude/**",
   ]),
 ]);
 

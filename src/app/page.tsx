@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { withAuth, signOut } from "@workos-inc/authkit-nextjs";
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
+import { signOutAction } from "@/lib/auth-actions";
 import { DocList } from "@/components/doc-list";
-
-async function signOutAction() {
-  "use server";
-  await signOut();
-}
 
 export default async function Home() {
   const { user } = await withAuth();
