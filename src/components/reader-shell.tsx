@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { OutlineRail } from "./outline-rail";
-import { ReaderToolbar } from "./reader-toolbar";
+import { ReaderToolbar, ReaderMobileBarButtons } from "./reader-toolbar";
+import { MobileBar } from "./mobile-bar";
 import { saveReadingPrefs } from "@/app/settings/actions";
 import type { Heading } from "@/lib/heading-utils";
 import type { Width } from "@/lib/user-preferences";
@@ -205,7 +206,7 @@ export function ReaderShell({
       </aside>
       <div
         data-reader-toolbar-cluster
-        className="hidden flex-col items-center gap-1.5 sm:sticky sm:top-14 sm:flex sm:shrink-0 sm:self-start"
+        className="hidden flex-col items-center gap-1.5 md:sticky md:top-14 md:flex md:shrink-0 md:self-start"
       >
         <button
           type="button"
@@ -226,6 +227,13 @@ export function ReaderShell({
           editHref={isAuthed ? `/edit/${slug}` : undefined}
         />
       </div>
+      <MobileBar palette={isAuthed}>
+        <ReaderMobileBarButtons
+          rawHref={rawHref}
+          dashboardHref={dashboardHref}
+          editHref={isAuthed ? `/edit/${slug}` : undefined}
+        />
+      </MobileBar>
     </main>
   );
 }
