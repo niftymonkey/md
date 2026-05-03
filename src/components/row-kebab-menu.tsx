@@ -61,7 +61,7 @@ export function RowKebabMenu({ slug, title }: { slug: string; title: string }) {
         aria-label={`Actions for ${title}`}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="grid size-9 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:bg-paper hover:text-ochre"
+        className="grid h-9 w-6 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:bg-paper hover:text-ochre"
       >
         <KebabIcon />
       </button>
