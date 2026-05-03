@@ -24,6 +24,27 @@
   display: none;
 }
 
+/* Width pill — keyed on :root[data-width] so the visible active button is
+   correct from first paint (the pre-hydration script writes data-width
+   synchronously). aria-pressed remains on the button for accessibility. */
+:root:not([data-width="wide"]) [data-width-pill="reading"],
+:root[data-width="wide"] [data-width-pill="wide"] {
+  background: var(--ochre);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* Outline toggle button — same pattern. Active when the outline is shown
+   (i.e. :root has no data-outline-hidden). */
+:root:not([data-outline-hidden]) [data-outline-toggle] {
+  border-color: var(--ochre);
+  background: var(--ochre);
+  color: var(--paper);
+}
+:root:not([data-outline-hidden]) [data-outline-toggle]:hover {
+  color: var(--paper);
+}
+
 /* Outline rail's internal scrollbar — invisible at rest; appears tinted (not
    the bright browser default) while the page is scrolling or while hovered. */
 [data-outline-scroll] {
@@ -290,6 +311,29 @@ button.cmd-palette-row:hover:not([data-selected="true"]) {
   margin-bottom: 32px;
 }
 
+.settings__back-nav {
+  position: absolute;
+  top: 32px;
+  right: clamp(28px, 5vw, 56px);
+  display: flex;
+  justify-content: flex-end;
+}
+.settings__back-link {
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
+}
+.settings__back-link:hover {
+  color: var(--ochre-deep);
+  border-color: var(--ochre);
+  background: var(--paper);
+}
+
 .settings__section + .settings__section {
   margin-top: 32px;
 }
@@ -342,6 +386,136 @@ button.cmd-palette-row:hover:not([data-selected="true"]) {
   color: var(--ochre-deep);
 }
 
+.settings__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings__row:last-of-type {
+  border-bottom: 0;
+}
+.settings__row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.settings__row-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.settings__row-help {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.settings__toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  border: 0;
+  background: color-mix(in oklch, var(--ink) 22%, transparent);
+  cursor: pointer;
+  transition: background-color 180ms;
+}
+.settings__toggle[data-on="true"] {
+  background: var(--ochre);
+}
+.settings__toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 0.25);
+  transition: transform 180ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+.settings__toggle[data-on="true"] .settings__toggle-thumb {
+  transform: translateX(16px);
+}
+
+.settings__pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.settings__pill button {
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 150ms, color 150ms;
+}
+.settings__pill button + button {
+  border-left: 1px solid var(--border);
+}
+.settings__pill button[data-active="true"] {
+  background: var(--ochre);
+  color: var(--paper);
+}
+.settings__pill button:hover:not([data-active="true"]) {
+  color: var(--ink);
+  background: var(--paper-warm);
+}
+
+.settings__input {
+  flex-shrink: 0;
+  width: 220px;
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 150ms;
+}
+.settings__input:focus {
+  border-color: var(--ochre);
+}
+
+.settings__hint {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.settings__sign-out {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 200ms, color 200ms;
+}
+.settings__sign-out:hover {
+  border-color: var(--ochre);
+  color: var(--ochre-deep);
+}
+
 .token-table {
   width: 100%;
   border-collapse: collapse;
@@ -354,16 +528,21 @@ button.cmd-palette-row:hover:not([data-selected="true"]) {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 0 0 8px;
+  padding: 0 32px 8px 0;
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 .token-table thead th:last-child {
-  width: 1%;
+  padding-right: 0;
+}
+.token-table thead th {
+  width: 25%;
 }
 .token-table tbody td {
-  padding: 12px 0;
+  padding: 12px 32px 12px 0;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  width: 25%;
 }
 .token-table tbody tr:last-child td {
   border-bottom: 0;
@@ -371,26 +550,21 @@ button.cmd-palette-row:hover:not([data-selected="true"]) {
 .token-table__name {
   font-weight: 500;
   color: var(--ink);
-  padding-right: 24px;
-  width: auto;
 }
 .token-table__id {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.8125rem;
   color: var(--muted);
-  padding-right: 24px;
   white-space: nowrap;
-  width: 1%;
 }
 .token-table__last-used {
   color: var(--muted);
-  padding-right: 16px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  width: 1%;
 }
 .token-table__actions {
   text-align: right;
+  padding-right: 0;
 }
 .token-table__revoke {
   background: transparent;

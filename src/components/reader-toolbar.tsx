@@ -45,12 +45,12 @@ function WidthPill({
         <button
           key={w}
           type="button"
-          data-active={value === w ? "true" : undefined}
+          data-width-pill={w}
           onClick={() => onChange(w)}
           aria-label={`Width: ${w}`}
           title={w === "reading" ? "Reading width" : "Wide width"}
           aria-pressed={value === w}
-          className="cursor-pointer border-0 bg-transparent py-1 font-mono text-[0.625rem] font-medium leading-none tracking-[0.04em] text-muted aria-pressed:bg-ochre aria-pressed:font-semibold aria-pressed:text-paper"
+          className="reader-toolbar__width-btn cursor-pointer border-0 bg-transparent py-1 font-mono text-[0.625rem] font-medium leading-none tracking-[0.04em] text-muted"
         >
           {w === "reading" ? "R" : "W"}
         </button>

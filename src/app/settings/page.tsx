@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { listTokensForOwner } from "@/lib/api-tokens";
+import { getUserPreferences } from "@/lib/user-preferences";
+import { ReadingSection } from "./_components/reading-section";
 import { TokensSection } from "./_components/tokens-section";
+import { AccountSection } from "./_components/account-section";
+import { SettingsBackNav } from "./_components/settings-back-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +21,21 @@ export default async function SettingsPage() {
     redirect("/");
   }
 
-  const tokens = await listTokensForOwner(user.id);
+  const [tokens, prefs] = await Promise.all([
+    listTokensForOwner(user.id),
+    getUserPreferences(user.id),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
       <div className="settings">
+        <SettingsBackNav />
         <h1 className="settings__h1">Settings</h1>
         <p className="settings__sub">
-          Preferences and API token management.
+          Reading preferences, API tokens, and account.
         </p>
+
+        <ReadingSection prefs={prefs} />
 
         <section className="settings__section">
           <h2 className="settings__section-h">API tokens</h2>
@@ -44,6 +54,8 @@ export default async function SettingsPage() {
             }))}
           />
         </section>
+
+        <AccountSection email={user.email} />
       </div>
     </main>
   );
