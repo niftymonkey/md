@@ -5,7 +5,10 @@ import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReaderShell } from "@/components/reader-shell";
-import { parseHeadings } from "@/lib/heading-utils";
+import {
+  parseHeadings,
+  shouldAutoShowOutline,
+} from "@/lib/heading-utils";
 import { resolveReaderPrefs } from "@/lib/reader-prefs";
 
 type PageProps = {
@@ -55,20 +58,19 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
   if (!doc) notFound();
 
   const headings = parseHeadings(doc.content);
-  const hasOutline = headings.filter((h) => h.level === 2).length >= 3;
+  const autoShowEligible = shouldAutoShowOutline(headings);
 
   const { user } = await withAuth();
   const isAuthed = !!user && isEmailAllowed(user.email);
   const { initialWidth, initialOutlineShown } = await resolveReaderPrefs({
     userId: isAuthed ? user!.id : null,
-    hasOutline,
+    autoShowEligible,
   });
 
   return (
     <ReaderShell
       slug={doc.slug}
       rawHref={`/api/raw/${doc.slug}`}
-      hasOutline={hasOutline}
       headings={headings}
       isAuthed={isAuthed}
       initialWidth={initialWidth}
