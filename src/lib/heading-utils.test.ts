@@ -38,6 +38,21 @@ grep '^MD_API_KEY=' ~/.env
       },
     ]);
   });
+
+  it("ignores headings inside tilde fenced code blocks", () => {
+    const headings = parseHeadings(`## Before
+
+~~~text
+## Inside fence
+~~~
+
+## After`);
+
+    expect(headings).toEqual([
+      { id: "before", level: 2, text: "Before" },
+      { id: "after", level: 2, text: "After" },
+    ]);
+  });
 });
 
 describe("outline auto-show eligibility", () => {

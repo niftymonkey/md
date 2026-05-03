@@ -189,11 +189,7 @@ export function ReaderShell({
       </div>
       <aside
         data-outline-aside
-        className={
-          outlineShown
-            ? "hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
-            : "hidden"
-        }
+        className="hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
       >
         <div className="pb-3 pt-1.5">
           <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
@@ -213,16 +209,12 @@ export function ReaderShell({
       >
         <button
           type="button"
-          data-outline-toggle={outlineShown ? "true" : undefined}
+          data-outline-toggle
           onClick={toggleOutline}
           aria-label={outlineShown ? "Hide outline" : "Show outline"}
           title={outlineShown ? "Hide outline (o)" : "Show outline (o)"}
           aria-pressed={outlineShown}
-          className={
-            outlineShown
-              ? "reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-ochre bg-ochre text-paper transition-[background-color,border-color,color] duration-200 hover:text-paper"
-              : "reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
-          }
+          className="reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
         >
           <OutlineIcon />
         </button>

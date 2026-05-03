@@ -1,6 +1,8 @@
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { describe, expect, it, vi } from "vitest";
 
+import nextConfig from "../next.config";
+
 vi.mock("@workos-inc/authkit-nextjs", () => ({
   authkitProxy: () => vi.fn(),
 }));
@@ -10,7 +12,7 @@ import { config } from "./proxy";
 function doesProxyMatch(url: string) {
   return unstable_doesMiddlewareMatch({
     config,
-    nextConfig: {},
+    nextConfig,
     url,
   });
 }
