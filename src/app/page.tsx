@@ -4,6 +4,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { signOutAction } from "@/lib/auth-actions";
 import { DocList } from "@/components/doc-list";
+import { MobileBar } from "@/components/mobile-bar";
 
 export default async function Home() {
   const { user } = await withAuth();
@@ -35,7 +36,7 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 hidden items-center gap-3 md:flex">
         <span className="inline-flex items-center gap-2 font-mono text-[0.6875rem] font-medium tracking-[0.04em] text-muted">
           press
           <span className="inline-flex gap-1">
@@ -80,6 +81,28 @@ export default async function Home() {
         </Link>
       </div>
       <DocList ownerId={user.id} />
+      <MobileBar palette>
+        <Link
+          href="/new"
+          aria-label="New document"
+          className="grid size-11 cursor-pointer place-items-center rounded-md border border-ink bg-ink text-paper transition-colors hover:bg-ochre-deep hover:border-ochre-deep"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-[18px]"
+            aria-hidden="true"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </Link>
+      </MobileBar>
     </main>
   );
 }

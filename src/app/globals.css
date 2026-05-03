@@ -80,6 +80,24 @@
   display: none;
 }
 
+/* Mobile bar — bottom-sticky chrome at <md:. CSS owns the slide-out
+   transform so the React component only flips a data attribute. The
+   bar sits above the iOS home-indicator gesture area via safe-area
+   insets, and reserves matching bottom padding on body so route
+   content never sits behind it. */
+.mobile-bar {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  transition: transform 220ms ease-out;
+}
+.mobile-bar[data-hidden="true"] {
+  transform: translateY(110%);
+}
+@media (max-width: 767px) {
+  :root[data-mobile-bar="1"] body {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
+  }
+}
+
 .dev-theme-switcher button {
   color: var(--muted);
 }
