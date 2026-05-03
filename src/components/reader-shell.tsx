@@ -215,7 +215,7 @@ export function ReaderShell({
           aria-label={outlineShown ? "Hide outline" : "Show outline"}
           title={outlineShown ? "Hide outline (o)" : "Show outline (o)"}
           aria-pressed={outlineShown}
-          className="reader-outline-toggle grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
+          className="reader-outline-toggle grid size-9 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[background-color,border-color,color] duration-200 hover:border-ochre hover:text-ochre"
         >
           <OutlineIcon />
         </button>
