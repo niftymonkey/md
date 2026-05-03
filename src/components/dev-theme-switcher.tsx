@@ -40,7 +40,7 @@ export function DevThemeSwitcher() {
   }
 
   return (
-    <div className="dev-theme-switcher fixed bottom-3 left-3 z-[100] flex gap-1 rounded-md border border-border bg-paper p-1 font-mono text-[0.6875rem] shadow-[var(--shadow-soft)]">
+    <div className="dev-theme-switcher fixed right-3 top-3 z-[100] flex gap-1 rounded-md border border-border bg-paper p-1 font-mono text-[0.6875rem] shadow-[var(--shadow-soft)] md:bottom-3 md:left-3 md:right-auto md:top-auto">
       {MODES.map((m) => (
         <button
           key={m}
