@@ -2,11 +2,12 @@ import Link from "next/link";
 import { listDocs } from "@/lib/db";
 import { DeleteButton } from "@/components/delete-button";
 import { EditLink } from "@/components/edit-link";
+import { RowKebabMenu } from "@/components/row-kebab-menu";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
-  month: "short",
-  day: "numeric",
+  month: "2-digit",
+  day: "2-digit",
 });
 
 export async function DocList({ ownerId }: { ownerId: string }) {
@@ -37,10 +38,11 @@ export async function DocList({ ownerId }: { ownerId: string }) {
           <span className="font-mono text-xs text-muted [font-variant-numeric:tabular-nums]">
             {DATE_FORMAT.format(doc.createdAt)}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="hidden items-center gap-1 md:flex">
             <EditLink slug={doc.slug} title={doc.title} />
             <DeleteButton slug={doc.slug} title={doc.title} />
           </span>
+          <RowKebabMenu slug={doc.slug} title={doc.title} />
         </li>
       ))}
     </ul>

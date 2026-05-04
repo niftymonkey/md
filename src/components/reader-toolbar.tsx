@@ -31,6 +31,27 @@ export function ReaderToolbar({
   );
 }
 
+type MobileProps = {
+  rawHref: string;
+  dashboardHref?: string;
+  editHref?: string;
+};
+
+export function ReaderMobileBarButtons({
+  rawHref,
+  dashboardHref,
+  editHref,
+}: MobileProps) {
+  return (
+    <>
+      {editHref && <MobileEditButton href={editHref} />}
+      <MobileCopyLinkButton />
+      <MobileRawButton href={rawHref} />
+      {dashboardHref && <MobileDashboardButton href={dashboardHref} />}
+    </>
+  );
+}
+
 function WidthPill({
   value,
   onChange,
@@ -42,7 +63,7 @@ function WidthPill({
     <div
       role="group"
       aria-label="Article width"
-      className="reader-toolbar__width-pill flex w-8 flex-col overflow-hidden rounded-md border border-border bg-paper"
+      className="reader-toolbar__width-pill flex w-9 flex-col overflow-hidden rounded-md border border-border bg-paper"
     >
       {(["reading", "wide"] as const).map((w) => (
         <button
@@ -141,11 +162,95 @@ function ToolbarButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="reader-toolbar__btn grid size-8 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-200 hover:border-ochre hover:text-ochre"
+      className="reader-toolbar__btn grid size-9 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-200 hover:border-ochre hover:text-ochre"
       {...rest}
     >
       {children}
     </button>
+  );
+}
+
+function MobileBarButton({
+  onClick,
+  label,
+  children,
+  ...rest
+}: {
+  onClick: () => void;
+  label: string;
+  children: ReactNode;
+} & Record<string, unknown>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="grid size-11 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MobileCopyLinkButton() {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    if (typeof window === "undefined") return;
+    if (!navigator.clipboard?.writeText) return;
+    void navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {});
+  }
+  return (
+    <MobileBarButton
+      onClick={copy}
+      label={copied ? "Copied" : "Copy link"}
+      data-copied={copied ? "true" : undefined}
+    >
+      <span className="grid size-[18px] place-items-center">
+        {copied ? <CheckIcon /> : <LinkIcon />}
+      </span>
+    </MobileBarButton>
+  );
+}
+
+function MobileRawButton({ href }: { href: string }) {
+  return (
+    <MobileBarButton
+      label="View raw"
+      onClick={() => window.location.assign(href)}
+    >
+      <span className="grid size-[18px] place-items-center">
+        <RawIcon />
+      </span>
+    </MobileBarButton>
+  );
+}
+
+function MobileEditButton({ href }: { href: string }) {
+  const router = useRouter();
+  return (
+    <MobileBarButton label="Edit" onClick={() => router.push(href)}>
+      <span className="grid size-[18px] place-items-center">
+        <EditIcon />
+      </span>
+    </MobileBarButton>
+  );
+}
+
+function MobileDashboardButton({ href }: { href: string }) {
+  const router = useRouter();
+  return (
+    <MobileBarButton label="Back to dashboard" onClick={() => router.push(href)}>
+      <span className="grid size-[18px] place-items-center">
+        <BackIcon />
+      </span>
+    </MobileBarButton>
   );
 }
 

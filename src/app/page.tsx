@@ -4,6 +4,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { signOutAction } from "@/lib/auth-actions";
 import { DocList } from "@/components/doc-list";
+import { MobileBar, MobileBarLink, PlusGlyph } from "@/components/mobile-bar";
 
 export default async function Home() {
   const { user } = await withAuth();
@@ -35,7 +36,7 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 hidden items-center gap-3 md:flex">
         <span className="inline-flex items-center gap-2 font-mono text-[0.6875rem] font-medium tracking-[0.04em] text-muted">
           press
           <span className="inline-flex gap-1">
@@ -80,6 +81,11 @@ export default async function Home() {
         </Link>
       </div>
       <DocList ownerId={user.id} />
+      <MobileBar palette>
+        <MobileBarLink href="/new" label="New document" variant="primary">
+          <PlusGlyph />
+        </MobileBarLink>
+      </MobileBar>
     </main>
   );
 }

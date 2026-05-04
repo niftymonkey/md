@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MobileBar } from "@/components/mobile-bar";
 
 const MAX_BYTES = 1024 * 1024;
 
@@ -165,7 +166,7 @@ export function EditForm({
         >
           {statusLabel}
         </span>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto hidden items-center gap-2 md:flex">
           <button
             type="button"
             onClick={() => router.push(`/v/${slug}`)}
@@ -198,7 +199,76 @@ export function EditForm({
           {error}
         </p>
       )}
+      <MobileBar palette>
+        <button
+          type="button"
+          onClick={() => router.push(`/v/${slug}`)}
+          aria-label="View document"
+          className="grid size-11 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
+        >
+          <ViewGlyph />
+        </button>
+        <button
+          type="button"
+          onClick={cancel}
+          aria-label="Cancel"
+          className="grid size-11 cursor-pointer place-items-center rounded-md border border-border bg-paper text-muted transition-[border-color,color] duration-150 hover:border-ochre hover:text-ochre"
+        >
+          <CancelGlyph />
+        </button>
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={saving || !dirty}
+          aria-label={saving ? "Saving" : "Save"}
+          className="grid size-11 cursor-pointer place-items-center rounded-md border border-ink bg-ink text-paper transition-colors duration-150 hover:bg-ochre-deep hover:border-ochre-deep disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-ink disabled:hover:border-ink"
+        >
+          <SaveGlyph />
+        </button>
+      </MobileBar>
     </div>
+  );
+}
+
+function glyphProps() {
+  return {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 24 24",
+    fill: "none" as const,
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    className: "size-[18px]",
+  };
+}
+
+function ViewGlyph() {
+  return (
+    <svg {...glyphProps()}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function CancelGlyph() {
+  return (
+    <svg {...glyphProps()}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function SaveGlyph() {
+  return (
+    <svg {...glyphProps()}>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
   );
 }
 

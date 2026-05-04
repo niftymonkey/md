@@ -78,6 +78,7 @@ export function HotkeyCheatSheet({ isAuthed }: { isAuthed: boolean }) {
       }
 
       if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
+        if (window.matchMedia("(max-width: 767px)").matches) return;
         e.preventDefault();
         setOpen((v) => !v);
       }

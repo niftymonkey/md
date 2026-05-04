@@ -7,6 +7,7 @@ import { ReadingSection } from "./_components/reading-section";
 import { TokensSection } from "./_components/tokens-section";
 import { AccountSection } from "./_components/account-section";
 import { SettingsBackNav } from "./_components/settings-back-nav";
+import { MobileBar, MobileBarLink, BackGlyph } from "@/components/mobile-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,11 @@ export default async function SettingsPage() {
 
         <AccountSection email={user.email} />
       </div>
+      <MobileBar palette>
+        <MobileBarLink href="/" label="Back to dashboard">
+          <BackGlyph />
+        </MobileBarLink>
+      </MobileBar>
     </main>
   );
 }
