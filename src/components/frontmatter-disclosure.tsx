@@ -35,8 +35,8 @@ export function FrontmatterDisclosure({ fields }: { fields: FrontmatterField[] }
       </summary>
       <div className="frontmatter__body">
         <dl className="frontmatter__dl">
-          {fields.map((field) => (
-            <Fragment key={field.key}>
+          {fields.map((field, index) => (
+            <Fragment key={`${field.key}-${index}`}>
               <dt className="frontmatter__dt">{field.key}</dt>
               <dd className="frontmatter__dd">{field.value}</dd>
             </Fragment>
