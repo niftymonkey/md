@@ -4,11 +4,13 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { FrontmatterDisclosure } from "@/components/frontmatter-disclosure";
 import { ReaderShell } from "@/components/reader-shell";
 import {
   parseHeadings,
   shouldAutoShowOutline,
 } from "@/lib/heading-utils";
+import { parseFrontmatter } from "@/lib/frontmatter";
 import { resolveReaderPrefs } from "@/lib/reader-prefs";
 
 type PageProps = {
@@ -57,7 +59,8 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
   const doc = await getDocBySlug(slug);
   if (!doc) notFound();
 
-  const headings = parseHeadings(doc.content);
+  const { fields: frontmatterFields, body } = parseFrontmatter(doc.content);
+  const headings = parseHeadings(body);
   const autoShowEligible = shouldAutoShowOutline(headings);
 
   const { user } = await withAuth();
@@ -76,7 +79,8 @@ export default async function ViewPage({ params, searchParams }: PageProps) {
       initialWidth={initialWidth}
       initialOutlineShown={initialOutlineShown}
     >
-      <MarkdownRenderer content={doc.content} />
+      <FrontmatterDisclosure fields={frontmatterFields} />
+      <MarkdownRenderer content={body} />
     </ReaderShell>
   );
 }

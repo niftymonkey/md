@@ -312,6 +312,115 @@ button.cmd-palette-row:hover:not([data-selected="true"]) {
   transition: none !important;
 }
 
+/* ==================== Frontmatter disclosure ====================
+   Native <details> sitting at the top of the rendered article. Quiet by
+   default — one-line summary above the H1; expands to a definition list.
+   Lives inside `.prose`, so selectors are scoped under `.prose` to win
+   over the typography plugin's defaults for details/dl/dt/dd. */
+.prose .frontmatter {
+  margin: 0 0 1.4em;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--paper-warm) 60%, transparent);
+  overflow: hidden;
+}
+
+.prose .frontmatter > .frontmatter__summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  margin: 0;
+}
+
+.prose .frontmatter > .frontmatter__summary::-webkit-details-marker {
+  display: none;
+}
+
+.frontmatter__chev {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 180ms ease-out;
+}
+
+.prose .frontmatter[open] > .frontmatter__summary .frontmatter__chev {
+  transform: rotate(90deg);
+}
+
+.frontmatter__label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.frontmatter__preview {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.frontmatter__preview-key {
+  color: var(--muted);
+}
+
+.frontmatter__count {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  color: var(--muted);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--paper);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.prose .frontmatter__body {
+  padding: 4px 16px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.prose .frontmatter__dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 18px;
+  row-gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.prose .frontmatter__dt {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+  font-weight: 500;
+}
+
+.prose .frontmatter__dd {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--ink);
+  line-height: 1.55;
+  margin: 0;
+  word-break: break-word;
+}
+
 /* ==================== /settings ==================== */
 .settings {
   position: relative;

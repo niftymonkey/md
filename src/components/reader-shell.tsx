@@ -190,9 +190,9 @@ export function ReaderShell({
       </div>
       <aside
         data-outline-aside
-        className="hidden min-[1100px]:sticky min-[1100px]:top-12 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
+        className="hidden min-[1100px]:sticky min-[1100px]:top-10 min-[1100px]:block min-[1100px]:max-w-60 min-[1100px]:shrink-0 min-[1100px]:self-start"
       >
-        <div className="pb-3 pt-1.5">
+        <div className="pb-3">
           <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
             On this page
           </span>
@@ -206,7 +206,7 @@ export function ReaderShell({
       </aside>
       <div
         data-reader-toolbar-cluster
-        className="hidden flex-col items-center gap-1.5 md:sticky md:top-14 md:flex md:shrink-0 md:self-start"
+        className="hidden flex-col items-center gap-1.5 md:sticky md:top-10 md:flex md:shrink-0 md:self-start"
       >
         <button
           type="button"
