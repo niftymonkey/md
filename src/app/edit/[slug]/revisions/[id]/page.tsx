@@ -5,6 +5,8 @@ import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import * as RevisionLog from "@/lib/revision-log";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { FrontmatterDisclosure } from "@/components/frontmatter-disclosure";
+import { parseFrontmatter } from "@/lib/frontmatter";
 import { RestoreAction } from "@/components/restore-action";
 
 type PageProps = {
@@ -64,6 +66,7 @@ export default async function RevisionDetailPage({ params }: PageProps) {
       </main>
     );
   }
+  const { fields: frontmatterFields, body } = parseFrontmatter(revision.content);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
@@ -102,7 +105,8 @@ export default async function RevisionDetailPage({ params }: PageProps) {
       </header>
 
       <article className="prose prose-neutral max-w-none">
-        <MarkdownRenderer content={revision.content} />
+        <FrontmatterDisclosure fields={frontmatterFields} />
+        <MarkdownRenderer content={body} />
       </article>
     </main>
   );
