@@ -1,29 +1,15 @@
 import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { getDocBySlug } from "@/lib/db";
 import * as RevisionLog from "@/lib/revision-log";
-
-function jsonError(status: number, message: string) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
+import { requireOwnedDoc } from "@/lib/route-helpers";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ slug: string }> },
 ) {
-  const auth = await requireAuth(req);
-  if (!auth.authenticated) {
-    return jsonError(auth.status, auth.reason);
-  }
-
   const { slug } = await context.params;
-  const doc = await getDocBySlug(slug);
-  if (!doc || doc.ownerId !== auth.ownerId) {
-    return jsonError(404, "Document not found");
-  }
+  const owned = await requireOwnedDoc(req, slug);
+  if (!owned.ok) return owned.response;
+  const { doc } = owned;
 
   const url = new URL(req.url);
   const limitParam = url.searchParams.get("limit");
