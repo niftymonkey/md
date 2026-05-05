@@ -24,38 +24,10 @@ export type FindOptions = {
 };
 
 function splitLines(content: string): string[] {
-  // Preserves empty trailing line iff the string ends with a newline; for
-  // preview purposes we only need indexable line text without their breaks.
   return content.split("\n");
 }
 
-function lineColumnFromOffset(
-  offset: number,
-  content: string,
-): { line: number; column: number } {
-  let line = 1;
-  let lineStart = 0;
-  for (let i = 0; i < offset; i++) {
-    if (content.charCodeAt(i) === 10) {
-      line++;
-      lineStart = i + 1;
-    }
-  }
-  return { line, column: offset - lineStart + 1 };
-}
-
-function endLineFromOffset(end: number, content: string): number {
-  let line = 1;
-  for (let i = 0; i < end; i++) {
-    if (content.charCodeAt(i) === 10) {
-      line++;
-    }
-  }
-  return line;
-}
-
 function buildPreview(
-  content: string,
   startLine: number,
   endLine: number,
   context: number,
@@ -70,6 +42,12 @@ function buildPreview(
   return out;
 }
 
+/**
+ * Linear scan: track current line and line-start column while advancing
+ * through `indexOf` matches in document order. Each match advances the
+ * cursor only as far as the match's end offset, so total work is O(n)
+ * in `content.length` regardless of match count.
+ */
 export function findMatches(
   content: string,
   query: string,
@@ -78,8 +56,6 @@ export function findMatches(
   if (query.length === 0) return [];
   const context = opts.context ?? 0;
   const lines = splitLines(content);
-  // splitLines on "a\n" gives ["a", ""] — drop the trailing empty entry so
-  // line numbers don't exceed the visible line count.
   const lineCount =
     lines.length > 0 && lines[lines.length - 1] === ""
       ? lines.length - 1
@@ -88,20 +64,42 @@ export function findMatches(
 
   const matches: Match[] = [];
   let from = 0;
+  let cursor = 0;
+  let line = 1;
+  let lineStart = 0;
+
   while (from <= content.length - query.length) {
     const idx = content.indexOf(query, from);
     if (idx === -1) break;
+
+    while (cursor < idx) {
+      if (content.charCodeAt(cursor) === 10) {
+        line++;
+        lineStart = cursor + 1;
+      }
+      cursor++;
+    }
+    const startLine = line;
+    const column = idx - lineStart + 1;
+
     const end = idx + query.length;
-    const { line, column } = lineColumnFromOffset(idx, content);
-    const lastLine = endLineFromOffset(end, content);
+    while (cursor < end) {
+      if (content.charCodeAt(cursor) === 10) {
+        line++;
+        lineStart = cursor + 1;
+      }
+      cursor++;
+    }
+    const lastLine = line;
+
     matches.push({
       start: idx,
       end,
-      line,
+      line: startLine,
       column,
-      previewLines: buildPreview(content, line, lastLine, context, visibleLines),
+      previewLines: buildPreview(startLine, lastLine, context, visibleLines),
     });
-    // Non-overlapping advance: skip past the matched region.
+
     from = end;
   }
   return matches;

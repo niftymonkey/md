@@ -56,6 +56,15 @@ export async function POST(
 ) {
   const { slug } = await context.params;
 
+  // Reject oversized requests before buffering. The 1 MB cap on the resulting
+  // doc is enforced after applying ops, but a malicious caller could still
+  // send a huge ops payload (e.g. a giant `replace.replace`) that would OOM
+  // the server during req.json(). Mirror the PATCH route's content-length guard.
+  const contentLength = req.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BYTES) {
+    return jsonError(413, "Request body exceeds 1MB limit");
+  }
+
   let body: Body;
   try {
     body = (await req.json()) as Body;

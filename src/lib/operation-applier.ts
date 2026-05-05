@@ -1,10 +1,4 @@
 import { findMatches, type PreviewLine } from "./match-resolver";
-
-export type MatchPreview = {
-  line: number;
-  column: number;
-  previewLines: PreviewLine[];
-};
 import type {
   EditOp,
   InsertAfterLineOp,
@@ -12,6 +6,20 @@ import type {
   DeleteLineRangeOp,
   ReplaceLineRangeOp,
 } from "./edit-op-schema";
+
+export type MatchPreview = {
+  line: number;
+  column: number;
+  previewLines: PreviewLine[];
+};
+
+/**
+ * Cap on `matches` returned in an ambiguous_match error. Short queries can
+ * match many thousands of times in a 1MB doc; previews are useful for
+ * disambiguation only when they fit in a glance. `matchCount` always
+ * reports the true total so the caller knows previews were truncated.
+ */
+const MAX_AMBIGUOUS_PREVIEWS = 5;
 
 export type ApplierError =
   | { kind: "no_match"; query: string }
@@ -203,19 +211,16 @@ export function apply(snapshot: string, ops: EditOp[]): ApplyResult {
     const op = ops[i]!;
     if (op.type !== "replace") continue;
     if (op.replaceAll) {
-      const matches = findMatches(running, op.find);
-      if (matches.length === 0) {
+      if (!running.includes(op.find)) {
         return {
           ok: false,
           failedAt: i,
           error: { kind: "no_match", query: op.find },
         };
       }
-      for (let m = matches.length - 1; m >= 0; m--) {
-        const match = matches[m]!;
-        running =
-          running.slice(0, match.start) + op.replace + running.slice(match.end);
-      }
+      // Native split/join is linear in content + replacements and avoids
+      // building per-match preview metadata we wouldn't surface anyway.
+      running = running.split(op.find).join(op.replace);
     } else {
       const matches = findMatches(running, op.find, { context: 1 });
       if (matches.length === 0) {
@@ -233,7 +238,7 @@ export function apply(snapshot: string, ops: EditOp[]): ApplyResult {
             kind: "ambiguous_match",
             query: op.find,
             matchCount: matches.length,
-            matches: matches.map((m) => ({
+            matches: matches.slice(0, MAX_AMBIGUOUS_PREVIEWS).map((m) => ({
               line: m.line,
               column: m.column,
               previewLines: m.previewLines,
