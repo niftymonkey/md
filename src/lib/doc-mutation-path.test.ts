@@ -31,6 +31,24 @@ afterAll(async () => {
   await sql`DELETE FROM docs WHERE owner_id = ${TEST_OWNER}`;
 });
 
+describe("DocMutationPath.writeDocContent — return shape", () => {
+  it("returns the updated doc so callers don't need a second query", async () => {
+    const doc = await createTestDoc("v0");
+    const result = await DocMutationPath.writeDocContent({
+      docId: doc.id,
+      newContent: "v1",
+      newTitle: "Renamed",
+      summary: null,
+      source: "manual",
+      ownerId: TEST_OWNER,
+    });
+    expect(result.doc.content).toBe("v1");
+    expect(result.doc.title).toBe("Renamed");
+    expect(result.doc.id).toBe(doc.id);
+    expect(result.doc.slug).toBe(doc.slug);
+  });
+});
+
 describe("DocMutationPath.writeDocContent — atomicity", () => {
   it("rolls back the docs UPDATE if RevisionLog.record throws", async () => {
     const doc = await createTestDoc("v0");

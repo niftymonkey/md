@@ -7,6 +7,8 @@ import {
   updateDocBySlug,
   type UpdateDocFields,
 } from "@/lib/db";
+import { writeDocContent } from "@/lib/doc-mutation-path";
+import type { RevisionSource } from "@/lib/revision-log";
 import { resolveTitle } from "@/lib/title";
 import { stripMarkdown } from "@/lib/strip-md";
 import { parseKind } from "@/lib/kind";
@@ -117,29 +119,43 @@ export async function PATCH(
     return jsonError(404, "Document not found");
   }
 
-  const fields: UpdateDocFields = {};
-
   // Title resolution mirrors upload semantics: explicit override → first H1 → "Untitled".
   // Recompute when content changes (so the H1 stays in sync) or when the caller
   // sends a title (including null/empty to re-derive from H1).
+  let nextTitle: string | undefined;
   if (hasContent || hasTitle) {
     const sourceContent = nextContent ?? existing.content;
     const explicit = hasTitle ? titleOverride : existing.title;
-    fields.title = resolveTitle(sourceContent, explicit);
+    nextTitle = resolveTitle(sourceContent, explicit);
   }
 
+  let updated;
   if (hasContent && nextContent !== undefined) {
-    fields.content = nextContent;
-    fields.searchText = stripMarkdown(nextContent);
-  }
-
-  if (hasKind) {
-    fields.kind = nextKind ?? null;
-  }
-
-  const updated = await updateDocBySlug(slug, fields);
-  if (!updated) {
-    return jsonError(404, "Document not found");
+    // Route through DocMutationPath so the prior content is snapshotted as a
+    // revision in the same transaction as the docs UPDATE.
+    const source: RevisionSource = auth.via === "session" ? "manual" : "cli";
+    const summary = auth.via === "session" ? "Manual edit" : null;
+    const result = await writeDocContent({
+      docId: existing.id,
+      newContent: nextContent,
+      newTitle: nextTitle,
+      newSearchText: stripMarkdown(nextContent),
+      newKind: hasKind ? (nextKind ?? null) : undefined,
+      summary,
+      source,
+      ownerId: auth.ownerId,
+    });
+    updated = result.doc;
+  } else {
+    // Title-only and/or kind-only edits don't snapshot content; keep them on
+    // the existing path that doesn't touch doc_revisions.
+    const fields: UpdateDocFields = {};
+    if (nextTitle !== undefined) fields.title = nextTitle;
+    if (hasKind) fields.kind = nextKind ?? null;
+    updated = await updateDocBySlug(slug, fields);
+    if (!updated) {
+      return jsonError(404, "Document not found");
+    }
   }
 
   revalidatePath("/");

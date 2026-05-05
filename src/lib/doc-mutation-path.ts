@@ -1,4 +1,5 @@
 import { db } from "@vercel/postgres";
+import type { Doc } from "./db";
 import * as RevisionLog from "./revision-log";
 
 export type WriteDocContentInput = {
@@ -13,8 +14,35 @@ export type WriteDocContentInput = {
 };
 
 export type WriteDocContentResult = {
+  doc: Doc;
   revisionId: string;
 };
+
+type DocRow = {
+  id: string;
+  slug: string;
+  owner_id: string;
+  title: string | null;
+  content: string;
+  kind: string | null;
+  search_text: string | null;
+  created_at: Date;
+  updated_at: Date;
+};
+
+function rowToDoc(row: DocRow): Doc {
+  return {
+    id: row.id,
+    slug: row.slug,
+    ownerId: row.owner_id,
+    title: row.title ?? "Untitled",
+    content: row.content,
+    kind: row.kind,
+    searchText: row.search_text,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 export async function writeDocContent(
   input: WriteDocContentInput,
@@ -49,10 +77,16 @@ export async function writeDocContent(
     }
     sets.push(`updated_at = now()`);
     const docIdParam = bind(input.docId);
-    await client.query(
-      `UPDATE docs SET ${sets.join(", ")} WHERE id = ${docIdParam}`,
+    const updateResult = await client.query<DocRow>(
+      `UPDATE docs SET ${sets.join(", ")} WHERE id = ${docIdParam}
+       RETURNING id, slug, owner_id, title, content, kind, search_text,
+                 created_at, updated_at`,
       values,
     );
+    const updatedRow = updateResult.rows[0];
+    if (!updatedRow) {
+      throw new Error(`docs UPDATE returned no rows for id=${input.docId}`);
+    }
 
     const revision = await RevisionLog.record(
       {
@@ -67,7 +101,7 @@ export async function writeDocContent(
     );
 
     await client.query("COMMIT");
-    return { revisionId: revision.externalId };
+    return { doc: rowToDoc(updatedRow), revisionId: revision.externalId };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
