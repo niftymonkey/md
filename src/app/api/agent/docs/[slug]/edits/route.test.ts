@@ -205,12 +205,17 @@ describe("POST /api/agent/docs/[slug]/edits — structured 409 errors", () => {
       error: string;
       failedAt: number;
       matchCount: number;
-      previewLines: { line: number; text: string }[];
+      matches: {
+        line: number;
+        column: number;
+        previewLines: { line: number; text: string }[];
+      }[];
     };
     expect(body.error).toBe("ambiguous_match");
     expect(body.failedAt).toBe(0);
     expect(body.matchCount).toBe(2);
-    expect(body.previewLines.length).toBeGreaterThan(0);
+    expect(body.matches).toHaveLength(2);
+    expect(body.matches[0]?.previewLines.length).toBeGreaterThan(0);
 
     const listed = await RevisionLog.list(doc.id);
     expect(listed.revisions).toHaveLength(0);

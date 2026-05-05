@@ -34,7 +34,9 @@ describe("apply — single replace op", () => {
       expect(result.error.kind).toBe("ambiguous_match");
       if (result.error.kind === "ambiguous_match") {
         expect(result.error.matchCount).toBe(2);
-        expect(result.error.previewLines.length).toBeGreaterThan(0);
+        expect(result.error.matches).toHaveLength(2);
+        expect(result.error.matches[0]?.line).toBeGreaterThan(0);
+        expect(result.error.matches[0]?.previewLines.length).toBeGreaterThan(0);
       }
       expect(result.failedAt).toBe(0);
     }

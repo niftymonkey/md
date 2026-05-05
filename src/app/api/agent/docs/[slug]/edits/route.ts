@@ -24,7 +24,7 @@ function applierErrorBody(
         failedAt,
         query: error.query,
         matchCount: error.matchCount,
-        previewLines: error.previewLines,
+        matches: error.matches,
       };
     case "line_out_of_range":
       return {

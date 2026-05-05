@@ -1,4 +1,10 @@
 import { findMatches, type PreviewLine } from "./match-resolver";
+
+export type MatchPreview = {
+  line: number;
+  column: number;
+  previewLines: PreviewLine[];
+};
 import type {
   EditOp,
   InsertAfterLineOp,
@@ -13,7 +19,7 @@ export type ApplierError =
       kind: "ambiguous_match";
       query: string;
       matchCount: number;
-      previewLines: PreviewLine[];
+      matches: MatchPreview[];
     }
   | { kind: "line_out_of_range"; line: number; documentLines: number }
   | {
@@ -227,7 +233,11 @@ export function apply(snapshot: string, ops: EditOp[]): ApplyResult {
             kind: "ambiguous_match",
             query: op.find,
             matchCount: matches.length,
-            previewLines: matches.flatMap((m) => m.previewLines),
+            matches: matches.map((m) => ({
+              line: m.line,
+              column: m.column,
+              previewLines: m.previewLines,
+            })),
           },
         };
       }
