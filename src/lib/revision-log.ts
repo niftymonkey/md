@@ -26,8 +26,10 @@ export type Revision = {
 
 export type RecordInput = {
   docId: string;
-  content: string;
+  /** The state being saved — what restoring this revision would return to. */
   prevContent: string;
+  /** The state about to replace prevContent. Used only to compute byte deltas. */
+  nextContent: string;
   summary: string | null;
   source: RevisionSource;
   ownerId: string;
@@ -45,7 +47,7 @@ export async function record(
   const externalId = `rv_${generateId()}`;
   const { bytesAdded, bytesRemoved } = computeDiff(
     input.prevContent,
-    input.content,
+    input.nextContent,
   );
   const result = await runner.query<{
     external_id: string;
@@ -59,7 +61,7 @@ export async function record(
     [
       externalId,
       input.docId,
-      input.content,
+      input.prevContent,
       input.summary,
       input.source,
       input.ownerId,

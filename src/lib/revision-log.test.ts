@@ -32,12 +32,15 @@ afterAll(async () => {
 });
 
 describe("RevisionLog.record + get round-trip", () => {
-  it("persists a revision and returns it via get(docId, externalId)", async () => {
+  it("snapshots the prior content so a future restore can recover this state", async () => {
+    // The revision row preserves prevContent (the state being superseded), not
+    // nextContent. This is the chokepoint property: every prior state captured
+    // before it stops being current.
     const doc = await createTestDoc("# Original\n\nbody");
     const result = await RevisionLog.record({
       docId: doc.id,
-      content: "# Updated\n\nbody",
       prevContent: doc.content,
+      nextContent: "# Updated\n\nbody",
       summary: "Title bump",
       source: "manual",
       ownerId: TEST_OWNER,
@@ -51,7 +54,7 @@ describe("RevisionLog.record + get round-trip", () => {
     expect(fetched).toMatchObject({
       externalId: result.externalId,
       docId: doc.id,
-      content: "# Updated\n\nbody",
+      content: "# Original\n\nbody", // prior state snapshotted
       summary: "Title bump",
       source: "manual",
       createdBy: TEST_OWNER,
@@ -68,8 +71,8 @@ describe("RevisionLog transactional client", () => {
       await RevisionLog.record(
         {
           docId: doc.id,
-          content: "v1",
           prevContent: "v0",
+          nextContent: "v1",
           summary: "rolled back",
           source: "manual",
           ownerId: TEST_OWNER,
@@ -91,8 +94,8 @@ describe("RevisionLog byte counts", () => {
     const doc = await createTestDoc("hello world");
     await RevisionLog.record({
       docId: doc.id,
-      content: "hello universe",
       prevContent: "hello world",
+      nextContent: "hello universe",
       summary: null,
       source: "manual",
       ownerId: TEST_OWNER,
@@ -114,24 +117,24 @@ describe("RevisionLog.list", () => {
     const doc = await createTestDoc("v0");
     const r1 = await RevisionLog.record({
       docId: doc.id,
-      content: "v1",
       prevContent: "v0",
+      nextContent: "v1",
       summary: "first",
       source: "manual",
       ownerId: TEST_OWNER,
     });
     const r2 = await RevisionLog.record({
       docId: doc.id,
-      content: "v2",
       prevContent: "v1",
+      nextContent: "v2",
       summary: "second",
       source: "manual",
       ownerId: TEST_OWNER,
     });
     const r3 = await RevisionLog.record({
       docId: doc.id,
-      content: "v3",
       prevContent: "v2",
+      nextContent: "v3",
       summary: "third",
       source: "manual",
       ownerId: TEST_OWNER,
@@ -154,8 +157,8 @@ describe("RevisionLog.list pagination", () => {
       recs.push(
         await RevisionLog.record({
           docId: doc.id,
-          content: `v${i}`,
           prevContent: `v${i - 1}`,
+          nextContent: `v${i}`,
           summary: `r${i}`,
           source: "manual",
           ownerId: TEST_OWNER,
@@ -199,8 +202,8 @@ describe("RevisionLog retention", () => {
       all.push(
         await RevisionLog.record({
           docId: doc.id,
-          content: `v${i}`,
           prevContent: `v${i - 1}`,
+          nextContent: `v${i}`,
           summary: `r${i}`,
           source: "manual",
           ownerId: TEST_OWNER,
@@ -230,8 +233,8 @@ describe("RevisionLog.get", () => {
     const docB = await createTestDoc("doc B");
     const recA = await RevisionLog.record({
       docId: docA.id,
-      content: "doc A v2",
       prevContent: docA.content,
+      nextContent: "doc A v2",
       summary: null,
       source: "manual",
       ownerId: TEST_OWNER,
