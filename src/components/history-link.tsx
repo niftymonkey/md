@@ -1,10 +1,23 @@
 import Link from "next/link";
 
-export function HistoryLink({ slug, title }: { slug: string; title: string }) {
+type Props = {
+  slug: string;
+  title: string;
+  revisionCount: number;
+};
+
+export function HistoryLink({ slug, title, revisionCount }: Props) {
+  const tooltip =
+    revisionCount === 0
+      ? "Revisions"
+      : revisionCount === 1
+        ? "Revisions (1)"
+        : `Revisions (${revisionCount})`;
   return (
     <Link
       href={`/edit/${slug}/revisions`}
-      aria-label={`History for ${title}`}
+      aria-label={`Revisions for ${title}`}
+      title={tooltip}
       prefetch={false}
       className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-paper hover:text-ochre"
     >

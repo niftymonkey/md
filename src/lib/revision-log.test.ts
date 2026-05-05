@@ -221,6 +221,51 @@ describe("RevisionLog retention", () => {
   }, 15_000);
 });
 
+describe("RevisionLog.countByDoc", () => {
+  it("returns counts keyed by docId for docs with revisions", async () => {
+    const docA = await createTestDoc("v0");
+    const docB = await createTestDoc("v0");
+    await RevisionLog.record({
+      docId: docA.id,
+      prevContent: "v0",
+      nextContent: "v1",
+      summary: null,
+      source: "manual",
+      ownerId: TEST_OWNER,
+    });
+    await RevisionLog.record({
+      docId: docA.id,
+      prevContent: "v1",
+      nextContent: "v2",
+      summary: null,
+      source: "manual",
+      ownerId: TEST_OWNER,
+    });
+    await RevisionLog.record({
+      docId: docB.id,
+      prevContent: "v0",
+      nextContent: "v1",
+      summary: null,
+      source: "manual",
+      ownerId: TEST_OWNER,
+    });
+    const counts = await RevisionLog.countByDoc([docA.id, docB.id]);
+    expect(counts[docA.id]).toBe(2);
+    expect(counts[docB.id]).toBe(1);
+  });
+
+  it("omits docs that have no revisions", async () => {
+    const doc = await createTestDoc("only");
+    const counts = await RevisionLog.countByDoc([doc.id]);
+    expect(counts[doc.id]).toBeUndefined();
+  });
+
+  it("returns an empty record for an empty input array", async () => {
+    const counts = await RevisionLog.countByDoc([]);
+    expect(counts).toEqual({});
+  });
+});
+
 describe("RevisionLog.get", () => {
   it("returns null when no revision exists for the given externalId", async () => {
     const doc = await createTestDoc("body");

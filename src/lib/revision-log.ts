@@ -182,6 +182,24 @@ export async function list(
   return { revisions, nextCursor };
 }
 
+export async function countByDoc(
+  docIds: string[],
+): Promise<Record<string, number>> {
+  if (docIds.length === 0) return {};
+  const result = await sql.query<{ doc_id: string; count: string }>(
+    `SELECT doc_id, COUNT(*)::text AS count
+     FROM doc_revisions
+     WHERE doc_id = ANY($1::uuid[])
+     GROUP BY doc_id`,
+    [docIds],
+  );
+  const counts: Record<string, number> = {};
+  for (const row of result.rows) {
+    counts[row.doc_id] = parseInt(row.count, 10);
+  }
+  return counts;
+}
+
 export async function get(
   docId: string,
   externalId: string,

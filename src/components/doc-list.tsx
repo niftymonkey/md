@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listDocs } from "@/lib/db";
+import * as RevisionLog from "@/lib/revision-log";
 import { DeleteButton } from "@/components/delete-button";
 import { EditLink } from "@/components/edit-link";
 import { HistoryLink } from "@/components/history-link";
@@ -13,6 +14,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
 
 export async function DocList({ ownerId }: { ownerId: string }) {
   const { docs } = await listDocs({ ownerId, limit: 20 });
+  const revisionCounts = await RevisionLog.countByDoc(docs.map((d) => d.id));
 
   if (docs.length === 0) {
     return (
@@ -40,7 +42,11 @@ export async function DocList({ ownerId }: { ownerId: string }) {
             {DATE_FORMAT.format(doc.createdAt)}
           </span>
           <span className="hidden items-center gap-1 md:flex">
-            <HistoryLink slug={doc.slug} title={doc.title} />
+            <HistoryLink
+              slug={doc.slug}
+              title={doc.title}
+              revisionCount={revisionCounts[doc.id] ?? 0}
+            />
             <EditLink slug={doc.slug} title={doc.title} />
             <DeleteButton slug={doc.slug} title={doc.title} />
           </span>
