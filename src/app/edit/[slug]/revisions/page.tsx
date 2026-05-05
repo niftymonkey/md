@@ -4,6 +4,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { getDocBySlug } from "@/lib/db";
 import * as RevisionLog from "@/lib/revision-log";
+import { formatSource, shouldShowSourceLabel } from "@/lib/revision-display";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -78,14 +79,23 @@ export default async function RevisionsListPage({ params }: PageProps) {
       </header>
 
       {revisions.length === 0 ? (
-        <p className="mt-12 text-sm text-muted">
-          No revisions yet. Edits to this document will appear here.
-        </p>
+        <div className="mt-12 max-w-prose">
+          <p className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
+            No revisions yet
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            Edits to this document will land here. The most recent 50 are kept;
+            older revisions drop off as new ones arrive. Restoring a prior state
+            also creates a new entry, so the audit trail stays linear.
+          </p>
+        </div>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {revisions.map((rev) => {
             const bytes = formatBytes(rev.bytesAdded, rev.bytesRemoved);
             const dateLabel = formatDate(rev.createdAt);
+            const sourceLabel = formatSource(rev.source);
+            const showSource = shouldShowSourceLabel(rev.source);
             const summary = rev.summary ? rev.summary : NO_MESSAGE;
             return (
               <li
@@ -99,17 +109,21 @@ export default async function RevisionsListPage({ params }: PageProps) {
                 >
                   {/* Mobile: stacked. Summary on line 1, meta on line 2. */}
                   <div className="sm:hidden">
-                    <p className="truncate text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-ochre">
+                    <p className="line-clamp-2 text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-ochre">
                       {summary}
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted [font-variant-numeric:tabular-nums]">
                       <span title={rev.createdAt.toISOString()}>{dateLabel}</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="tracking-[0.12em]">{rev.source}</span>
                       {bytes ? (
                         <>
                           <span aria-hidden="true">·</span>
                           <span>{bytes}</span>
+                        </>
+                      ) : null}
+                      {showSource ? (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span className="tracking-[0.12em]">{sourceLabel}</span>
                         </>
                       ) : null}
                     </p>
@@ -126,7 +140,7 @@ export default async function RevisionsListPage({ params }: PageProps) {
                       {summary}
                     </span>
                     <span className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
-                      {rev.source}
+                      {showSource ? sourceLabel : ""}
                     </span>
                     <span className="min-w-[5rem] text-right font-mono text-[0.6875rem] text-muted [font-variant-numeric:tabular-nums]">
                       {bytes ?? ""}

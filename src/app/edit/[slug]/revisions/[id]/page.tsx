@@ -7,6 +7,7 @@ import * as RevisionLog from "@/lib/revision-log";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { FrontmatterDisclosure } from "@/components/frontmatter-disclosure";
 import { parseFrontmatter } from "@/lib/frontmatter";
+import { formatSource, shouldShowSourceLabel } from "@/lib/revision-display";
 import { RestoreAction } from "@/components/restore-action";
 
 type PageProps = {
@@ -80,21 +81,24 @@ export default async function RevisionDetailPage({ params }: PageProps) {
           &larr; All revisions
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-          <div className="flex flex-col gap-1">
-            <p
-              className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted [font-variant-numeric:tabular-nums]"
-              title={revision.createdAt.toISOString()}
-            >
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <p className="flex items-baseline gap-x-2 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
               <span>Revision</span>
-              <span className="mx-2 normal-case tracking-[0.04em] text-ink">
+              <span className="normal-case tracking-[0.04em] text-ink">
                 {revision.externalId}
               </span>
-              <span aria-hidden="true">·</span>
-              <span className="ml-2">{formatDate(revision.createdAt)}</span>
-              <span aria-hidden="true" className="mx-2">
-                ·
-              </span>
-              <span>{revision.source}</span>
+            </p>
+            <p
+              className="flex flex-wrap items-baseline gap-x-3 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted [font-variant-numeric:tabular-nums]"
+              title={revision.createdAt.toISOString()}
+            >
+              <span>{formatDate(revision.createdAt)}</span>
+              {shouldShowSourceLabel(revision.source) ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{formatSource(revision.source)}</span>
+                </>
+              ) : null}
             </p>
             {revision.summary ? (
               <p className="text-[0.9375rem] text-ink">{revision.summary}</p>

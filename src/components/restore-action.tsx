@@ -25,7 +25,7 @@ export function RestoreAction({ slug, revisionId }: Props) {
         body: JSON.stringify({ revisionId }),
       });
       if (!response.ok) {
-        let message = "Restore failed. Try again.";
+        let message = "Try again.";
         try {
           const data = (await response.json()) as { error?: string };
           if (data?.error) message = data.error;
@@ -35,9 +35,9 @@ export function RestoreAction({ slug, revisionId }: Props) {
         setError(message);
         return;
       }
-      router.push(`/v/${slug}`);
+      router.push(`/edit/${slug}`);
     } catch {
-      setError("Restore failed. Try again.");
+      setError("Try again.");
     } finally {
       setBusy(false);
     }
@@ -49,9 +49,12 @@ export function RestoreAction({ slug, revisionId }: Props) {
       {error ? (
         <p
           role="alert"
-          className="text-[0.75rem] text-muted"
+          className="flex items-baseline gap-x-2 font-mono text-[0.75rem] font-semibold text-ink"
         >
-          {error}
+          <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-ochre">
+            Restore failed
+          </span>
+          <span className="font-sans font-normal text-ink">{error}</span>
         </p>
       ) : null}
     </div>
