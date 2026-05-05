@@ -1,29 +1,22 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
-import {
-  deleteDocBySlug,
-  getDocBySlug,
-  updateDocBySlug,
-  type UpdateDocFields,
-} from "@/lib/db";
+import { deleteDocBySlug, updateDocBySlug, type UpdateDocFields } from "@/lib/db";
+import { writeDocContent } from "@/lib/doc-mutation-path";
+import type { RevisionSource } from "@/lib/revision-log";
 import { resolveTitle } from "@/lib/title";
 import { stripMarkdown } from "@/lib/strip-md";
 import { parseKind } from "@/lib/kind";
+import { jsonError, requireOwnedDoc } from "@/lib/route-helpers";
 
 const MAX_BYTES = 1024 * 1024;
-
-function jsonError(status: number, message: string) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
 
 export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ slug: string }> },
 ) {
+  // DELETE does ownership-checking inside deleteDocBySlug's WHERE clause, so
+  // skip the requireOwnedDoc SELECT round-trip here.
   const auth = await requireAuth(req);
   if (!auth.authenticated) {
     return jsonError(auth.status, auth.reason);
@@ -51,11 +44,6 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ slug: string }> },
 ) {
-  const auth = await requireAuth(req);
-  if (!auth.authenticated) {
-    return jsonError(auth.status, auth.reason);
-  }
-
   const { slug } = await context.params;
 
   const contentLength = req.headers.get("content-length");
@@ -111,35 +99,53 @@ export async function PATCH(
     nextKind = parsed.value;
   }
 
-  const existing = await getDocBySlug(slug);
-  if (!existing || existing.ownerId !== auth.ownerId) {
-    // 404 (not 403) on owner mismatch — don't leak existence to non-owners.
-    return jsonError(404, "Document not found");
-  }
-
-  const fields: UpdateDocFields = {};
+  const owned = await requireOwnedDoc(req, slug);
+  if (!owned.ok) return owned.response;
+  const { auth, doc: existing } = owned;
 
   // Title resolution mirrors upload semantics: explicit override → first H1 → "Untitled".
   // Recompute when content changes (so the H1 stays in sync) or when the caller
   // sends a title (including null/empty to re-derive from H1).
+  let nextTitle: string | undefined;
   if (hasContent || hasTitle) {
     const sourceContent = nextContent ?? existing.content;
     const explicit = hasTitle ? titleOverride : existing.title;
-    fields.title = resolveTitle(sourceContent, explicit);
+    nextTitle = resolveTitle(sourceContent, explicit);
   }
 
-  if (hasContent && nextContent !== undefined) {
-    fields.content = nextContent;
-    fields.searchText = stripMarkdown(nextContent);
-  }
-
-  if (hasKind) {
-    fields.kind = nextKind ?? null;
-  }
-
-  const updated = await updateDocBySlug(slug, fields);
-  if (!updated) {
-    return jsonError(404, "Document not found");
+  // A no-op content PATCH (same string as existing.content) shouldn't burn a
+  // retention slot. Compare exactly; the content column is opaque text.
+  let updated;
+  if (
+    hasContent &&
+    nextContent !== undefined &&
+    nextContent !== existing.content
+  ) {
+    // Route through DocMutationPath so the prior content is snapshotted as a
+    // revision in the same transaction as the docs UPDATE.
+    const source: RevisionSource = auth.via === "session" ? "manual" : "cli";
+    const summary = auth.via === "session" ? "Manual edit" : null;
+    const result = await writeDocContent({
+      docId: existing.id,
+      newContent: nextContent,
+      newTitle: nextTitle,
+      newSearchText: stripMarkdown(nextContent),
+      newKind: hasKind ? (nextKind ?? null) : undefined,
+      summary,
+      source,
+      ownerId: auth.ownerId,
+    });
+    updated = result.doc;
+  } else {
+    // Title-only and/or kind-only edits don't snapshot content; keep them on
+    // the existing path that doesn't touch doc_revisions.
+    const fields: UpdateDocFields = {};
+    if (nextTitle !== undefined) fields.title = nextTitle;
+    if (hasKind) fields.kind = nextKind ?? null;
+    updated = await updateDocBySlug(slug, fields);
+    if (!updated) {
+      return jsonError(404, "Document not found");
+    }
   }
 
   revalidatePath("/");

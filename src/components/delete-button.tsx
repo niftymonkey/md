@@ -42,7 +42,7 @@ export function DeleteButton({ slug, title }: { slug: string; title: string }) {
       onClick={onClick}
       disabled={busy || isPending}
       aria-label={`Delete ${title}`}
-      title={`Delete ${title}`}
+      title="Delete"
       className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-paper hover:text-ochre disabled:opacity-50"
     >
       <svg

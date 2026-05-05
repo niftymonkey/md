@@ -5,6 +5,7 @@ export function EditLink({ slug, title }: { slug: string; title: string }) {
     <Link
       href={`/edit/${slug}`}
       aria-label={`Edit ${title}`}
+      title="Edit"
       prefetch={false}
       className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-paper hover:text-ochre"
     >
