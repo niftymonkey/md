@@ -44,7 +44,7 @@ export function RestoreAction({ slug, revisionId }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 sm:items-end">
+    <div className="flex flex-col items-end gap-2">
       <RestoreButton onConfirm={onConfirm} disabled={busy} />
       {error ? (
         <p
