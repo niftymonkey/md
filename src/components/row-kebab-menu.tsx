@@ -91,6 +91,16 @@ export function RowKebabMenu({ slug, title }: { slug: string; title: string }) {
             <EditIcon />
             <span>Edit</span>
           </Link>
+          <Link
+            href={`/edit/${slug}/revisions`}
+            role="menuitem"
+            prefetch={false}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 border-t border-border px-3 py-2.5 text-sm text-ink transition-colors hover:bg-paper-warm"
+          >
+            <HistoryIcon />
+            <span>History</span>
+          </Link>
           <button
             type="button"
             role="menuitem"
@@ -148,6 +158,16 @@ function DeleteIcon() {
       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
       <path d="M10 11v6" />
       <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function HistoryIcon() {
+  return (
+    <svg {...strokeProps()}>
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }
