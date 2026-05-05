@@ -44,17 +44,17 @@ export function RestoreAction({ slug, revisionId }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="flex flex-col items-start gap-2 sm:items-end">
       <RestoreButton onConfirm={onConfirm} disabled={busy} />
       {error ? (
         <p
           role="alert"
-          className="flex items-baseline gap-x-2 font-mono text-[0.75rem] font-semibold text-ink"
+          className="flex items-baseline gap-x-2 text-sm text-ink"
         >
-          <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-ochre">
+          <span className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ochre">
             Restore failed
           </span>
-          <span className="font-sans font-normal text-ink">{error}</span>
+          <span>{error}</span>
         </p>
       ) : null}
     </div>

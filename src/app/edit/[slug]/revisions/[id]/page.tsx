@@ -80,18 +80,17 @@ export default async function RevisionDetailPage({ params }: PageProps) {
         >
           &larr; All revisions
         </Link>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <p className="flex items-baseline gap-x-2 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted">
+            <p
+              className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted [font-variant-numeric:tabular-nums]"
+              title={revision.createdAt.toISOString()}
+            >
               <span>Revision</span>
               <span className="normal-case tracking-[0.04em] text-ink">
                 {revision.externalId}
               </span>
-            </p>
-            <p
-              className="flex flex-wrap items-baseline gap-x-3 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted [font-variant-numeric:tabular-nums]"
-              title={revision.createdAt.toISOString()}
-            >
+              <span aria-hidden="true">·</span>
               <span>{formatDate(revision.createdAt)}</span>
               {shouldShowSourceLabel(revision.source) ? (
                 <>
@@ -104,7 +103,9 @@ export default async function RevisionDetailPage({ params }: PageProps) {
               <p className="text-[0.9375rem] text-ink">{revision.summary}</p>
             ) : null}
           </div>
-          <RestoreAction slug={slug} revisionId={revision.externalId} />
+          <div className="sm:shrink-0">
+            <RestoreAction slug={slug} revisionId={revision.externalId} />
+          </div>
         </div>
       </header>
 
