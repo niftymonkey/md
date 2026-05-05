@@ -203,6 +203,50 @@ describe("apply — atomicity", () => {
   });
 });
 
+describe("apply — setContent op", () => {
+  it("replaces the entire document body", () => {
+    const result = apply("# Old\n\nbody\n", [
+      { type: "setContent", content: "# New\n\nbody2\n" },
+    ]);
+    expectOk(result);
+    expect(result.content).toBe("# New\n\nbody2\n");
+  });
+
+  it("accepts empty content (empties the doc)", () => {
+    const result = apply("# Old\n", [{ type: "setContent", content: "" }]);
+    expectOk(result);
+    expect(result.content).toBe("");
+  });
+});
+
+describe("apply — to: -1 sentinel", () => {
+  const content = mkContent(["a", "b", "c", "d", "e"]);
+
+  it("deleteLineRange to: -1 deletes through end of doc", () => {
+    const result = apply(content, [
+      { type: "deleteLineRange", from: 3, to: -1 },
+    ]);
+    expectOk(result);
+    expect(result.content).toBe(mkContent(["a", "b"]));
+  });
+
+  it("replaceLineRange to: -1 replaces from N through end with new content", () => {
+    const result = apply(content, [
+      { type: "replaceLineRange", from: 1, to: -1, content: "X\nY" },
+    ]);
+    expectOk(result);
+    expect(result.content).toBe(mkContent(["X", "Y"]));
+  });
+
+  it("from: 1, to: -1 replaces the whole doc (alternative to setContent)", () => {
+    const result = apply(content, [
+      { type: "replaceLineRange", from: 1, to: -1, content: "ALL NEW" },
+    ]);
+    expectOk(result);
+    expect(result.content).toBe(mkContent(["ALL NEW"]));
+  });
+});
+
 describe("apply — empty ops batch", () => {
   it("returns the content unchanged for an empty batch", () => {
     // Defensive: parseEditOps rejects empty arrays at the boundary, but apply

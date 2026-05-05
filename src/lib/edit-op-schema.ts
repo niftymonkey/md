@@ -23,6 +23,7 @@ export type DeleteLineRangeOp = {
   type: "deleteLineRange";
   /** 1-indexed inclusive. */
   from: number;
+  /** 1-indexed inclusive, or `-1` to mean end-of-document. */
   to: number;
 };
 
@@ -30,7 +31,19 @@ export type ReplaceLineRangeOp = {
   type: "replaceLineRange";
   /** 1-indexed inclusive. */
   from: number;
+  /** 1-indexed inclusive, or `-1` to mean end-of-document. */
   to: number;
+  content: string;
+};
+
+/**
+ * Replaces the entire document body in one op. The "save as" verb. Must be
+ * the only op in its batch — mixing with other ops is rejected at parse time
+ * since their resolution semantics (snapshot vs running) become ill-defined
+ * once the whole body is wiped.
+ */
+export type SetContentOp = {
+  type: "setContent";
   content: string;
 };
 
@@ -39,7 +52,8 @@ export type EditOp =
   | InsertAfterLineOp
   | InsertBeforeLineOp
   | DeleteLineRangeOp
-  | ReplaceLineRangeOp;
+  | ReplaceLineRangeOp
+  | SetContentOp;
 
 export type ParseResult<T> =
   | { ok: true; op: T }
@@ -55,7 +69,15 @@ const KNOWN_TYPES = new Set([
   "insertBeforeLine",
   "deleteLineRange",
   "replaceLineRange",
+  "setContent",
 ]);
+
+export const TO_END_SENTINEL = -1;
+
+function isToValue(v: unknown): v is number {
+  if (typeof v !== "number" || !Number.isInteger(v)) return false;
+  return v === TO_END_SENTINEL || v >= 1;
+}
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -120,10 +142,14 @@ function parseDeleteRange(
   if (!isPositiveInteger(input.from)) {
     return { ok: false, error: "deleteLineRange: from must be an integer >= 1" };
   }
-  if (!isPositiveInteger(input.to)) {
-    return { ok: false, error: "deleteLineRange: to must be an integer >= 1" };
+  if (!isToValue(input.to)) {
+    return {
+      ok: false,
+      error:
+        "deleteLineRange: to must be an integer >= 1 (or -1 for end-of-document)",
+    };
   }
-  if (input.from > input.to) {
+  if (input.to !== TO_END_SENTINEL && input.from > input.to) {
     return {
       ok: false,
       error: "deleteLineRange: from must be <= to (invalid range)",
@@ -141,10 +167,14 @@ function parseReplaceRange(
   if (!isPositiveInteger(input.from)) {
     return { ok: false, error: "replaceLineRange: from must be an integer >= 1" };
   }
-  if (!isPositiveInteger(input.to)) {
-    return { ok: false, error: "replaceLineRange: to must be an integer >= 1" };
+  if (!isToValue(input.to)) {
+    return {
+      ok: false,
+      error:
+        "replaceLineRange: to must be an integer >= 1 (or -1 for end-of-document)",
+    };
   }
-  if (input.from > input.to) {
+  if (input.to !== TO_END_SENTINEL && input.from > input.to) {
     return {
       ok: false,
       error: "replaceLineRange: from must be <= to (invalid range)",
@@ -162,6 +192,15 @@ function parseReplaceRange(
       content: input.content,
     },
   };
+}
+
+function parseSetContent(
+  input: Record<string, unknown>,
+): ParseResult<SetContentOp> {
+  if (typeof input.content !== "string") {
+    return { ok: false, error: "setContent: content must be a string" };
+  }
+  return { ok: true, op: { type: "setContent", content: input.content } };
 }
 
 export function parseEditOp(input: unknown): ParseResult<EditOp> {
@@ -186,6 +225,8 @@ export function parseEditOp(input: unknown): ParseResult<EditOp> {
       return parseDeleteRange(input);
     case "replaceLineRange":
       return parseReplaceRange(input);
+    case "setContent":
+      return parseSetContent(input);
     default:
       return { ok: false, error: `unknown op type: ${type}` };
   }
@@ -205,6 +246,16 @@ export function parseEditOps(input: unknown): ParseBatchResult {
       return { ok: false, error: `ops[${i}]: ${result.error}` };
     }
     ops.push(result.op);
+  }
+  // setContent rewrites the whole body; mixing it with other ops makes
+  // their resolution rules (snapshot vs running) ill-defined. Require it
+  // to stand alone.
+  const hasSetContent = ops.some((op) => op.type === "setContent");
+  if (hasSetContent && ops.length > 1) {
+    return {
+      ok: false,
+      error: "setContent must be the only op in its batch (exclusive)",
+    };
   }
   return { ok: true, ops };
 }

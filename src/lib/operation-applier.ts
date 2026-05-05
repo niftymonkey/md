@@ -48,6 +48,8 @@ type LineAddressedOp =
   | DeleteLineRangeOp
   | ReplaceLineRangeOp;
 
+const TO_END_SENTINEL = -1;
+
 type ResolvedRange = {
   start: number;
   end: number;
@@ -55,10 +57,22 @@ type ResolvedRange = {
 };
 
 function isLineOp(op: EditOp): op is LineAddressedOp {
-  return op.type !== "replace";
+  return (
+    op.type === "insertAfterLine" ||
+    op.type === "insertBeforeLine" ||
+    op.type === "deleteLineRange" ||
+    op.type === "replaceLineRange"
+  );
 }
 
-function visibleLineCount(content: string): number {
+/**
+ * The number of lines an editor would display for `content`. A trailing
+ * newline does NOT count as starting an additional empty line.
+ *
+ * Exported so the GET endpoint can surface `lineCount` without re-implementing
+ * the count rule (and without diverging from what the applier uses internally).
+ */
+export function visibleLineCount(content: string): number {
   if (content.length === 0) return 0;
   let count = 1;
   for (let i = 0; i < content.length; i++) {
@@ -134,7 +148,10 @@ function resolveLineOp(
     }
     case "deleteLineRange":
     case "replaceLineRange": {
-      if (op.from < 1 || op.to > visibleCount) {
+      // -1 sentinel resolves to the last visible line. Surfacing this as the
+      // resolved value also keeps overlap detection accurate.
+      const resolvedTo = op.to === TO_END_SENTINEL ? visibleCount : op.to;
+      if (op.from < 1 || resolvedTo > visibleCount || op.from > resolvedTo) {
         return {
           ok: false,
           error: {
@@ -147,9 +164,9 @@ function resolveLineOp(
       }
       const start = lineStartOffset(snapshot, op.from);
       const end =
-        op.to === visibleCount
+        resolvedTo === visibleCount
           ? snapshot.length
-          : lineStartOffset(snapshot, op.to + 1);
+          : lineStartOffset(snapshot, resolvedTo + 1);
       let replacement: string;
       if (op.type === "deleteLineRange") {
         replacement = "";
@@ -164,6 +181,12 @@ function resolveLineOp(
 
 export function apply(snapshot: string, ops: EditOp[]): ApplyResult {
   if (ops.length === 0) return { ok: true, content: snapshot };
+
+  // setContent is exclusive in its batch (enforced at parse time). Short-
+  // circuit here so the line/string resolution paths don't have to consider it.
+  if (ops.length === 1 && ops[0]!.type === "setContent") {
+    return { ok: true, content: ops[0]!.content };
+  }
 
   const visibleCount = visibleLineCount(snapshot);
 

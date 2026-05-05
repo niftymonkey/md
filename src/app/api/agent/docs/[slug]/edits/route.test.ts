@@ -248,6 +248,84 @@ describe("POST /api/agent/docs/[slug]/edits — structured 409 errors", () => {
   });
 });
 
+describe("POST /api/agent/docs/[slug]/edits — setContent", () => {
+  it("rewrites the entire body and records an agent revision", async () => {
+    const { token, doc } = await setupAuthorizedDoc("# Old\n\nbody\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "setContent", content: "# New\n\nbody2\n" }],
+        summary: "full save",
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      doc: { content: string };
+      revisionId: string;
+    };
+    expect(body.doc.content).toBe("# New\n\nbody2\n");
+    expect(body.revisionId).toMatch(/^rv_/);
+
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(1);
+    expect(listed.revisions[0]?.source).toBe("agent");
+  });
+
+  it("re-derives title from the new H1 (matches upload semantics)", async () => {
+    const { token, doc } = await setupAuthorizedDoc("# Old H1\n\nbody\n");
+    const res = await postReq(
+      doc.slug,
+      { ops: [{ type: "setContent", content: "# Brand New H1\n\nfresh\n" }] },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { doc: { title: string } };
+    expect(body.doc.title).toBe("Brand New H1");
+  });
+
+  it("rejects setContent mixed with other ops", async () => {
+    const { token, doc } = await setupAuthorizedDoc("a\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          { type: "setContent", content: "x" },
+          { type: "replace", find: "a", replace: "b" },
+        ],
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/agent/docs/[slug]/edits — to: -1 sentinel", () => {
+  it("replaceLineRange from: 1, to: -1 replaces the whole doc in one call", async () => {
+    const { token, doc } = await setupAuthorizedDoc(
+      "old line 1\nold line 2\nold line 3\n",
+    );
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          {
+            type: "replaceLineRange",
+            from: 1,
+            to: -1,
+            content: "brand new body",
+          },
+        ],
+        summary: "replace via -1 sentinel",
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { doc: { content: string } };
+    expect(body.doc.content).toBe("brand new body\n");
+  });
+});
+
 describe("POST /api/agent/docs/[slug]/edits — content size limit", () => {
   it("rejects ops that would push content past 1 MB", async () => {
     const { token, doc } = await setupAuthorizedDoc("seed\n");
