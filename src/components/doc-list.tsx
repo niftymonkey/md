@@ -12,6 +12,15 @@ const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   day: "2-digit",
 });
 
+const TOOLTIP_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
 export async function DocList({ ownerId }: { ownerId: string }) {
   const { docs } = await listDocs({ ownerId, limit: 20 });
   const revisionCounts = await RevisionLog.countByDoc(docs.map((d) => d.id));
@@ -38,8 +47,11 @@ export async function DocList({ ownerId }: { ownerId: string }) {
           >
             {doc.title}
           </Link>
-          <span className="font-mono text-xs text-muted [font-variant-numeric:tabular-nums]">
-            {DATE_FORMAT.format(doc.createdAt)}
+          <span
+            className="font-mono text-xs text-muted [font-variant-numeric:tabular-nums]"
+            title={`Last updated ${TOOLTIP_DATE_FORMAT.format(doc.updatedAt).toUpperCase().replace(",", "")}`}
+          >
+            {DATE_FORMAT.format(doc.updatedAt)}
           </span>
           <span className="hidden items-center gap-1 md:flex">
             <HistoryLink
