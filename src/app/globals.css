@@ -835,3 +835,25 @@ button.cmd-palette-row:hover:not([data-selected="true"]) {
 .modal__btn--primary:hover:not(:disabled) {
   background: var(--ochre-deep);
 }
+
+/* Restore-confirm countdown rule. Animates the 2px ochre rule across the
+   bottom of the button as the 3-second countdown elapses. ease-out-quart
+   makes the chance to cancel feel like it's slipping away. */
+[data-restore-confirm-rule] {
+  animation: restore-confirm-rule 3000ms cubic-bezier(0.165, 0.84, 0.44, 1)
+    forwards;
+}
+@keyframes restore-confirm-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-restore-confirm-rule] {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
