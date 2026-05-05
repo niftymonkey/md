@@ -86,4 +86,18 @@ describe("PATCH /api/docs/[slug] revision creation", () => {
     const listed = await RevisionLog.list(doc.id);
     expect(listed.revisions).toHaveLength(0);
   });
+
+  it("does NOT create a revision when content is submitted but unchanged from the existing value", async () => {
+    const { token, doc } = await setupAuthorizedDoc("identical body");
+    // Round-tripping the same content through PATCH should not burn a slot.
+    const res = await patchReq(
+      doc.slug,
+      { content: "identical body", title: "Renamed" },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(0);
+  });
 });

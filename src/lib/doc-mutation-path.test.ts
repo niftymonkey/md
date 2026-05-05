@@ -122,3 +122,49 @@ describe("DocMutationPath.writeDocContent", () => {
     expect(revision?.source).toBe("manual");
   });
 });
+
+describe("DocMutationPath.writeDocContent — concurrent writers", () => {
+  it("serializes via FOR UPDATE so each revision snapshots the immediate prior state", async () => {
+    // Two writers race against the same doc. With row-level locking, the
+    // second to acquire the lock reads the first's committed content as its
+    // prevContent. Regardless of which writer wins the race, the resulting
+    // revisions form a deterministic invariant: the set of snapshotted
+    // contents is exactly { original, intermediate }, and persisted.content
+    // matches whichever writer committed second.
+    const doc = await createTestDoc("v0");
+
+    const [resultA, resultB] = await Promise.all([
+      DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "vA",
+        summary: "writer A",
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+      DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "vB",
+        summary: "writer B",
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+    ]);
+
+    // The persisted content matches whichever writer committed last.
+    const persisted = await getDocBySlug(doc.slug);
+    expect(["vA", "vB"]).toContain(persisted?.content);
+
+    // Two revisions exist. As a set, their contents capture the original
+    // ("v0") plus the intermediate (the loser's newContent).
+    const revA = await RevisionLog.get(doc.id, resultA.revisionId);
+    const revB = await RevisionLog.get(doc.id, resultB.revisionId);
+    expect(revA).not.toBeNull();
+    expect(revB).not.toBeNull();
+    const snapshotted = new Set([revA!.content, revB!.content]);
+    expect(snapshotted.has("v0")).toBe(true);
+    // The other snapshot is the loser's newContent (i.e., the one whose
+    // committed state became the intermediate prevContent for the winner).
+    const intermediate = persisted?.content === "vA" ? "vB" : "vA";
+    expect(snapshotted.has(intermediate)).toBe(true);
+  });
+});

@@ -14,7 +14,9 @@ export async function GET(
   const url = new URL(req.url);
   const limitParam = url.searchParams.get("limit");
   const cursorParam = url.searchParams.get("cursor") ?? undefined;
-  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+  const limitParsed = limitParam ? parseInt(limitParam, 10) : NaN;
+  const limit =
+    Number.isFinite(limitParsed) && limitParsed > 0 ? limitParsed : undefined;
 
   const result = await RevisionLog.list(doc.id, { limit, cursor: cursorParam });
   return new Response(

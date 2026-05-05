@@ -20,7 +20,7 @@ Four survive the deletion test. Several candidates collapsed into helpers or van
 
 ### RevisionLog *(local-substitutable: Postgres)*
 
-- **Interface:** `record({docId, content, prevContent, summary, source, ownerId}) → {externalId, createdAt}`, `list(docId, {limit, cursor}) → {revisions, nextCursor}`, `get(docId, externalId) → Revision | null`.
+- **Interface:** `record({docId, prevContent, nextContent, summary, source, ownerId}, runner?) → {externalId, createdAt}`, `list(docId, {limit, cursor}) → {revisions, nextCursor}`, `get(docId, externalId) → Revision | null`, `countByDoc(docIds[]) → Record<docId, number>`. `prevContent` is what's stored in the row (model B); `nextContent` is used only to compute byte deltas via `DiffStats`. Optional `runner` lets the caller pass a transactional client.
 - **What it hides:** the `doc_revisions` schema, retention cap (last 50 per doc, prune on insert), ordering, external-ID generation, the `DiffStats` call that computes byte deltas at write time.
 - **Why it doesn't own restore:** Shape A (RevisionLog.restore) would force this module to write into the `docs` table, crossing the boundary it's supposed to own. Shape B (caller-orchestrated) keeps RevisionLog scoped to one table; restore is just `RevisionLog.get(...)` followed by `DocMutationPath.writeDocContent(..., source: 'restore')`.
 - **Leverage:** the only reader/writer of `doc_revisions`. Tests stay scoped to one table.
@@ -34,9 +34,9 @@ Four survive the deletion test. Several candidates collapsed into helpers or van
 
 - **What it hides:** route layout, mobile layout, restore-confirm UX.
 - **Surface:**
-  - `/dashboard/docs/<slug>/revisions` — list panel
-  - `/dashboard/docs/<slug>/revisions/<id>` — view a single revision read-only
-- **Reuse:** the markdown rendering component used by `/v/<slug>` is reused here, but the route is new and authed. The public `/v/<slug>` does not gain a `?rev=` parameter — history would leak to anyone with the slug.
+  - `/edit/<slug>/revisions` — list panel
+  - `/edit/<slug>/revisions/<id>` — view a single revision read-only
+- **Reuse:** the markdown rendering pipeline used by `/v/<slug>` (`parseFrontmatter` + `FrontmatterDisclosure` + `MarkdownRenderer`) is reused here, but the route is new and authed. The public `/v/<slug>` does not gain a `?rev=` parameter — history would leak to anyone with the slug.
 - **Restore:** action triggers a confirm UI, then `POST /api/docs/<slug>/restore`.
 
 ## Schema (`doc_revisions`)

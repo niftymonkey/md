@@ -113,8 +113,14 @@ export async function PATCH(
     nextTitle = resolveTitle(sourceContent, explicit);
   }
 
+  // A no-op content PATCH (same string as existing.content) shouldn't burn a
+  // retention slot. Compare exactly; the content column is opaque text.
   let updated;
-  if (hasContent && nextContent !== undefined) {
+  if (
+    hasContent &&
+    nextContent !== undefined &&
+    nextContent !== existing.content
+  ) {
     // Route through DocMutationPath so the prior content is snapshotted as a
     // revision in the same transaction as the docs UPDATE.
     const source: RevisionSource = auth.via === "session" ? "manual" : "cli";

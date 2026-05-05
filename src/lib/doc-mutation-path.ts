@@ -51,8 +51,12 @@ export async function writeDocContent(
   try {
     await client.query("BEGIN");
 
+    // Lock the docs row so two concurrent writers serialize. Without FOR
+    // UPDATE, both writers can read the same prevContent and the second
+    // revision would snapshot stale content instead of the actual immediate
+    // prior state.
     const prevResult = await client.query<{ content: string }>(
-      `SELECT content FROM docs WHERE id = $1`,
+      `SELECT content FROM docs WHERE id = $1 FOR UPDATE`,
       [input.docId],
     );
     const prev = prevResult.rows[0];

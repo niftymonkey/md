@@ -23,7 +23,6 @@ const TOOLTIP_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
 
 export async function DocList({ ownerId }: { ownerId: string }) {
   const { docs } = await listDocs({ ownerId, limit: 20 });
-  const revisionCounts = await RevisionLog.countByDoc(docs.map((d) => d.id));
 
   if (docs.length === 0) {
     return (
@@ -32,6 +31,8 @@ export async function DocList({ ownerId }: { ownerId: string }) {
       </p>
     );
   }
+
+  const revisionCounts = await RevisionLog.countByDoc(docs.map((d) => d.id));
 
   return (
     <ul className="flex flex-col gap-1.5">

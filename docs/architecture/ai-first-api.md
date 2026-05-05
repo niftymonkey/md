@@ -75,7 +75,7 @@ The `source` enum (defined in #45): `'manual' | 'cli' | 'agent' | 'restore'`. Th
 ### Phase 2 — Quality of life
 - `If-Match: <version>` enforcement on `/edits`.
 - `dryRun: true` on `/edits` — uses MatchResolver alone, no write.
-- `POST /api/agent/docs/<slug>/revisions` (list), `POST /api/agent/docs/<slug>/restore`.
+- `GET /api/agent/docs/<slug>/revisions` (list), `POST /api/agent/docs/<slug>/restore`.
 - `SectionAddresser` ships, unlocking `replaceSection` ops.
 
 ### Phase 3 — Multi-doc leverage
