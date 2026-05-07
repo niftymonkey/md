@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { listDocs } from "@/lib/db";
 import { parseKind } from "@/lib/kind";
+import { parseTagsFilter } from "@/lib/tags";
 
 function jsonError(status: number, message: string) {
   return new Response(JSON.stringify({ error: message }), {
@@ -34,12 +35,19 @@ export async function GET(req: NextRequest) {
     return jsonError(400, kindResult.error);
   }
 
+  const tagsParam = searchParams.get("tags");
+  const tagsResult = parseTagsFilter(tagsParam);
+  if (!tagsResult.ok) {
+    return jsonError(400, tagsResult.error);
+  }
+
   const result = await listDocs({
     ownerId: auth.ownerId,
     limit,
     cursor,
     search,
     kind: kindResult.value ?? undefined,
+    tags: tagsResult.value.length > 0 ? tagsResult.value : undefined,
   });
 
   return new Response(
@@ -49,6 +57,7 @@ export async function GET(req: NextRequest) {
         slug: d.slug,
         title: d.title,
         kind: d.kind,
+        tags: d.tags,
         createdAt: d.createdAt,
       })),
       nextCursor: result.nextCursor,

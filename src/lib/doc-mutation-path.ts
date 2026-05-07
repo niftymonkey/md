@@ -8,6 +8,7 @@ export type WriteDocContentInput = {
   newTitle?: string;
   newSearchText?: string;
   newKind?: string | null;
+  newTags?: string[];
   summary: string | null;
   source: RevisionLog.RevisionSource;
   ownerId: string;
@@ -25,6 +26,7 @@ type DocRow = {
   title: string | null;
   content: string;
   kind: string | null;
+  tags: string[] | null;
   search_text: string | null;
   created_at: Date;
   updated_at: Date;
@@ -38,10 +40,17 @@ function rowToDoc(row: DocRow): Doc {
     title: row.title ?? "Untitled",
     content: row.content,
     kind: row.kind,
+    tags: row.tags ?? [],
     searchText: row.search_text,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function toPgTextArray(values: string[]): string {
+  if (values.length === 0) return "{}";
+  const escaped = values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+  return `{${escaped.join(",")}}`;
 }
 
 export async function writeDocContent(
@@ -79,11 +88,14 @@ export async function writeDocContent(
     if (input.newKind !== undefined) {
       sets.push(`kind = ${bind(input.newKind)}`);
     }
+    if (input.newTags !== undefined) {
+      sets.push(`tags = ${bind(toPgTextArray(input.newTags))}`);
+    }
     sets.push(`updated_at = now()`);
     const docIdParam = bind(input.docId);
     const updateResult = await client.query<DocRow>(
       `UPDATE docs SET ${sets.join(", ")} WHERE id = ${docIdParam}
-       RETURNING id, slug, owner_id, title, content, kind, search_text,
+       RETURNING id, slug, owner_id, title, content, kind, tags, search_text,
                  created_at, updated_at`,
       values,
     );

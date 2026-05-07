@@ -9,6 +9,7 @@ export type Doc = {
   title: string;
   content: string;
   kind: string | null;
+  tags: string[];
   searchText: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -16,7 +17,7 @@ export type Doc = {
 
 export type DocSummary = Pick<
   Doc,
-  "id" | "slug" | "title" | "kind" | "createdAt" | "updatedAt"
+  "id" | "slug" | "title" | "kind" | "tags" | "createdAt" | "updatedAt"
 >;
 
 type DocRow = {
@@ -26,6 +27,7 @@ type DocRow = {
   title: string | null;
   content: string;
   kind: string | null;
+  tags: string[] | null;
   search_text: string | null;
   created_at: Date;
   updated_at: Date;
@@ -36,6 +38,7 @@ type DocSummaryRow = {
   slug: string;
   title: string | null;
   kind: string | null;
+  tags: string[] | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -48,6 +51,7 @@ function rowToDoc(row: DocRow): Doc {
     title: row.title ?? "Untitled",
     content: row.content,
     kind: row.kind,
+    tags: row.tags ?? [],
     searchText: row.search_text,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -60,6 +64,7 @@ function rowToSummary(row: DocSummaryRow): DocSummary {
     slug: row.slug,
     title: row.title ?? "Untitled",
     kind: row.kind,
+    tags: row.tags ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -79,12 +84,13 @@ export async function insertDoc(input: {
   title: string;
   content: string;
   kind: string | null;
+  tags?: string[];
   searchText: string;
 }): Promise<Doc> {
   const result = await sql<DocRow>`
-    INSERT INTO docs (slug, owner_id, title, content, kind, search_text)
-    VALUES (${input.slug}, ${input.ownerId}, ${input.title}, ${input.content}, ${input.kind}, ${input.searchText})
-    RETURNING id, slug, owner_id, title, content, kind, search_text, created_at, updated_at
+    INSERT INTO docs (slug, owner_id, title, content, kind, tags, search_text)
+    VALUES (${input.slug}, ${input.ownerId}, ${input.title}, ${input.content}, ${input.kind}, ${toPgTextArray(input.tags ?? [])}, ${input.searchText})
+    RETURNING id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at
   `;
   const row = result.rows[0];
   if (!row) throw new Error("INSERT returned no rows");
@@ -96,6 +102,7 @@ export type UpdateDocFields = {
   content?: string;
   searchText?: string;
   kind?: string | null;
+  tags?: string[];
 };
 
 export async function updateDocBySlug(
@@ -113,6 +120,8 @@ export async function updateDocBySlug(
   if (fields.searchText !== undefined)
     sets.push(`search_text = ${bind(fields.searchText)}`);
   if (fields.kind !== undefined) sets.push(`kind = ${bind(fields.kind)}`);
+  if (fields.tags !== undefined)
+    sets.push(`tags = ${bind(toPgTextArray(fields.tags))}`);
 
   if (sets.length === 0) {
     // Nothing to update — caller shouldn't reach here, but treat as a read.
@@ -125,7 +134,7 @@ export async function updateDocBySlug(
     UPDATE docs
     SET ${sets.join(", ")}
     WHERE slug = ${slugParam}
-    RETURNING id, slug, owner_id, title, content, kind, search_text, created_at, updated_at
+    RETURNING id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at
   `;
 
   const result = await sql.query<DocRow>(text, values);
@@ -145,7 +154,7 @@ export async function deleteDocBySlug(
 
 export async function getDocBySlug(slug: string): Promise<Doc | null> {
   const result = await sql<DocRow>`
-    SELECT id, slug, owner_id, title, content, kind, search_text, created_at, updated_at
+    SELECT id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at
     FROM docs
     WHERE slug = ${slug}
     LIMIT 1
@@ -160,6 +169,7 @@ export type ListDocsArgs = {
   cursor?: string;
   limit?: number;
   kind?: string;
+  tags?: string[];
 };
 
 export type ListDocsResult = {
@@ -205,6 +215,7 @@ export async function listDocs(args: ListDocsArgs): Promise<ListDocsResult> {
   const limit = Math.max(1, Math.min(100, args.limit ?? 20));
   const search = args.search?.trim();
   const kind = args.kind;
+  const tags = args.tags && args.tags.length > 0 ? args.tags : null;
 
   // Search branch: rank by FTS relevance. Cursor pagination not supported with
   // search in v1 — caller should rely on search precision and the limit.
@@ -213,28 +224,13 @@ export async function listDocs(args: ListDocsArgs): Promise<ListDocsResult> {
     if (!tsQuery) {
       return { docs: [], nextCursor: null };
     }
-    const result = kind
-      ? await sql<DocSummaryRow>`
-          SELECT id, slug, title, kind, created_at, updated_at
-          FROM docs
-          WHERE owner_id = ${args.ownerId}
-            AND kind = ${kind}
-            AND search_vector @@ to_tsquery('english', ${tsQuery})
-          ORDER BY ts_rank(search_vector, to_tsquery('english', ${tsQuery})) DESC,
-                   created_at DESC,
-                   id DESC
-          LIMIT ${limit}
-        `
-      : await sql<DocSummaryRow>`
-          SELECT id, slug, title, kind, created_at, updated_at
-          FROM docs
-          WHERE owner_id = ${args.ownerId}
-            AND search_vector @@ to_tsquery('english', ${tsQuery})
-          ORDER BY ts_rank(search_vector, to_tsquery('english', ${tsQuery})) DESC,
-                   created_at DESC,
-                   id DESC
-          LIMIT ${limit}
-        `;
+    const result = await runSearchQuery({
+      ownerId: args.ownerId,
+      tsQuery,
+      kind: kind ?? null,
+      tags,
+      limit,
+    });
     return { docs: result.rows.map(rowToSummary), nextCursor: null };
   }
 
@@ -243,6 +239,7 @@ export async function listDocs(args: ListDocsArgs): Promise<ListDocsResult> {
   const result = await runListQuery({
     ownerId: args.ownerId,
     kind: kind ?? null,
+    tags,
     cursor,
     limit,
   });
@@ -258,48 +255,92 @@ export async function listDocs(args: ListDocsArgs): Promise<ListDocsResult> {
 async function runListQuery(args: {
   ownerId: string;
   kind: string | null;
+  tags: string[] | null;
   cursor: CursorPayload | null;
   limit: number;
 }) {
-  const { ownerId, kind, cursor, limit } = args;
+  const { ownerId, kind, tags, cursor, limit } = args;
   const fetchLimit = limit + 1;
 
-  if (kind && cursor) {
-    return sql<DocSummaryRow>`
-      SELECT id, slug, title, kind, created_at, updated_at
-      FROM docs
-      WHERE owner_id = ${ownerId}
-        AND kind = ${kind}
-        AND (created_at, id) < (${cursor.createdAt.toISOString()}, ${cursor.id})
-      ORDER BY created_at DESC, id DESC
-      LIMIT ${fetchLimit}
-    `;
+  const where: string[] = ["owner_id = $1"];
+  const values: unknown[] = [ownerId];
+  function bind(value: unknown): string {
+    values.push(value);
+    return `$${values.length}`;
   }
-  if (kind) {
-    return sql<DocSummaryRow>`
-      SELECT id, slug, title, kind, created_at, updated_at
-      FROM docs
-      WHERE owner_id = ${ownerId}
-        AND kind = ${kind}
-      ORDER BY created_at DESC, id DESC
-      LIMIT ${fetchLimit}
-    `;
-  }
+  if (kind) where.push(`kind = ${bind(kind)}`);
+  if (tags) where.push(`tags @> ${bind(toPgTextArray(tags))}::text[]`);
   if (cursor) {
-    return sql<DocSummaryRow>`
-      SELECT id, slug, title, kind, created_at, updated_at
-      FROM docs
-      WHERE owner_id = ${ownerId}
-        AND (created_at, id) < (${cursor.createdAt.toISOString()}, ${cursor.id})
-      ORDER BY created_at DESC, id DESC
-      LIMIT ${fetchLimit}
-    `;
+    const tsParam = bind(cursor.createdAt.toISOString());
+    const idParam = bind(cursor.id);
+    where.push(`(created_at, id) < (${tsParam}, ${idParam})`);
   }
-  return sql<DocSummaryRow>`
-    SELECT id, slug, title, kind, created_at, updated_at
+
+  const text = `
+    SELECT id, slug, title, kind, tags, created_at, updated_at
     FROM docs
-    WHERE owner_id = ${ownerId}
+    WHERE ${where.join(" AND ")}
     ORDER BY created_at DESC, id DESC
-    LIMIT ${fetchLimit}
+    LIMIT ${bind(fetchLimit)}
   `;
+  return sql.query<DocSummaryRow>(text, values);
+}
+
+async function runSearchQuery(args: {
+  ownerId: string;
+  tsQuery: string;
+  kind: string | null;
+  tags: string[] | null;
+  limit: number;
+}) {
+  const { ownerId, tsQuery, kind, tags, limit } = args;
+  const where: string[] = ["owner_id = $1"];
+  const values: unknown[] = [ownerId];
+  function bind(value: unknown): string {
+    values.push(value);
+    return `$${values.length}`;
+  }
+  const tsQueryParam = bind(tsQuery);
+  where.push(`search_vector @@ to_tsquery('english', ${tsQueryParam})`);
+  if (kind) where.push(`kind = ${bind(kind)}`);
+  if (tags) where.push(`tags @> ${bind(toPgTextArray(tags))}::text[]`);
+
+  const text = `
+    SELECT id, slug, title, kind, tags, created_at, updated_at
+    FROM docs
+    WHERE ${where.join(" AND ")}
+    ORDER BY ts_rank(search_vector, to_tsquery('english', ${tsQueryParam})) DESC,
+             created_at DESC,
+             id DESC
+    LIMIT ${bind(limit)}
+  `;
+  return sql.query<DocSummaryRow>(text, values);
+}
+
+export type TagUsageRow = { tag: string; count: number };
+
+/**
+ * Owner-scoped tag usage counts, sorted by usage descending and tag ascending
+ * for stable ordering. Powers the dashboard pill row.
+ */
+export async function listTagUsage(ownerId: string): Promise<TagUsageRow[]> {
+  const result = await sql<{ tag: string; count: string }>`
+    SELECT t AS tag, COUNT(*)::text AS count
+    FROM docs, unnest(tags) t
+    WHERE owner_id = ${ownerId}
+    GROUP BY t
+    ORDER BY COUNT(*) DESC, t ASC
+  `;
+  return result.rows.map((r) => ({ tag: r.tag, count: Number(r.count) }));
+}
+
+/**
+ * `@vercel/postgres` serializes JS arrays as Postgres arrays only via the
+ * tagged-template form; passing `string[]` to `sql.query(text, values)` errors
+ * out. The literal-array constructor `'{a,b}'` works in both forms.
+ */
+function toPgTextArray(values: string[]): string {
+  if (values.length === 0) return "{}";
+  const escaped = values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+  return `{${escaped.join(",")}}`;
 }
