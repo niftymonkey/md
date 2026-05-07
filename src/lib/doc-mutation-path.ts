@@ -1,5 +1,6 @@
 import { db } from "@vercel/postgres";
 import type { Doc } from "./db";
+import { toPgTextArray } from "./pg";
 import * as RevisionLog from "./revision-log";
 
 export type WriteDocContentInput = {
@@ -47,11 +48,6 @@ function rowToDoc(row: DocRow): Doc {
   };
 }
 
-function toPgTextArray(values: string[]): string {
-  if (values.length === 0) return "{}";
-  const escaped = values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
-  return `{${escaped.join(",")}}`;
-}
 
 export async function writeDocContent(
   input: WriteDocContentInput,

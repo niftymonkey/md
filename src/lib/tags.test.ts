@@ -42,6 +42,11 @@ describe("parseTags", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("rejects commas inside a tag (would break ?tags= round-trip)", () => {
+    const result = parseTags(["foo,bar"]);
+    expect(result.ok).toBe(false);
+  });
+
   it("rejects tags over the per-tag length cap", () => {
     const tooLong = "a".repeat(TAG_MAX_LENGTH + 1);
     const result = parseTags([tooLong]);

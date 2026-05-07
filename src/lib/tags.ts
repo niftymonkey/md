@@ -90,6 +90,11 @@ function normalizeTag(raw: string): string | null | { ok: false; error: string }
   if (/\s/.test(trimmed)) {
     return { ok: false, error: "tag must not contain whitespace" };
   }
+  if (trimmed.includes(",")) {
+    // The dashboard filter serializes tags as comma-separated `?tags=a,b,c`.
+    // Allowing commas would split a single tag into two during URL round-trip.
+    return { ok: false, error: "tag must not contain commas" };
+  }
   if (trimmed.length > TAG_MAX_LENGTH) {
     return { ok: false, error: `tag exceeds ${TAG_MAX_LENGTH} characters` };
   }

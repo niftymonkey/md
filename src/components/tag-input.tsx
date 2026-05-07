@@ -65,6 +65,10 @@ export function TagInput({ value, onChange, label = "Tags" }: Props) {
       setHint("Tags can't contain spaces");
       return;
     }
+    if (next.includes(",")) {
+      setHint("Tags can't contain commas");
+      return;
+    }
     if (next.length > TAG_MAX_LENGTH) {
       setHint(`Tag too long (max ${TAG_MAX_LENGTH})`);
       return;

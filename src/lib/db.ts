@@ -1,4 +1,5 @@
 import { sql } from "@vercel/postgres";
+import { toPgTextArray } from "./pg";
 
 export { sql };
 
@@ -334,13 +335,3 @@ export async function listTagUsage(ownerId: string): Promise<TagUsageRow[]> {
   return result.rows.map((r) => ({ tag: r.tag, count: Number(r.count) }));
 }
 
-/**
- * `@vercel/postgres` serializes JS arrays as Postgres arrays only via the
- * tagged-template form; passing `string[]` to `sql.query(text, values)` errors
- * out. The literal-array constructor `'{a,b}'` works in both forms.
- */
-function toPgTextArray(values: string[]): string {
-  if (values.length === 0) return "{}";
-  const escaped = values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
-  return `{${escaped.join(",")}}`;
-}
