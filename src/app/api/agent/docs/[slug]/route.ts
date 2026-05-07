@@ -16,6 +16,7 @@ export async function GET(
       slug: doc.slug,
       title: doc.title,
       kind: doc.kind,
+      tags: doc.tags,
       content: doc.content,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,

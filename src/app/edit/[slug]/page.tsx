@@ -28,6 +28,7 @@ export default async function EditPage({ params }: PageProps) {
         slug={doc.slug}
         initialContent={doc.content}
         initialTitle={doc.title}
+        initialTags={doc.tags}
       />
     </main>
   );

@@ -7,6 +7,7 @@ import type { RevisionSource } from "@/lib/revision-log";
 import { resolveTitle } from "@/lib/title";
 import { stripMarkdown } from "@/lib/strip-md";
 import { parseKind } from "@/lib/kind";
+import { parseTags } from "@/lib/tags";
 import { jsonError, requireOwnedDoc } from "@/lib/route-helpers";
 
 const MAX_BYTES = 1024 * 1024;
@@ -38,6 +39,7 @@ type PatchInput = {
   content?: unknown;
   title?: unknown;
   kind?: unknown;
+  tags?: unknown;
 };
 
 export async function PATCH(
@@ -64,8 +66,12 @@ export async function PATCH(
   const hasContent = body.content !== undefined;
   const hasTitle = body.title !== undefined;
   const hasKind = body.kind !== undefined;
-  if (!hasContent && !hasTitle && !hasKind) {
-    return jsonError(400, "At least one of content, title, or kind is required");
+  const hasTags = body.tags !== undefined;
+  if (!hasContent && !hasTitle && !hasKind && !hasTags) {
+    return jsonError(
+      400,
+      "At least one of content, title, kind, or tags is required",
+    );
   }
 
   let nextContent: string | undefined;
@@ -97,6 +103,15 @@ export async function PATCH(
       return jsonError(400, parsed.error);
     }
     nextKind = parsed.value;
+  }
+
+  let nextTags: string[] | undefined;
+  if (hasTags) {
+    const parsed = parseTags(body.tags);
+    if (!parsed.ok) {
+      return jsonError(400, parsed.error);
+    }
+    nextTags = parsed.value;
   }
 
   const owned = await requireOwnedDoc(req, slug);
@@ -131,17 +146,19 @@ export async function PATCH(
       newTitle: nextTitle,
       newSearchText: stripMarkdown(nextContent),
       newKind: hasKind ? (nextKind ?? null) : undefined,
+      newTags: hasTags ? nextTags : undefined,
       summary,
       source,
       ownerId: auth.ownerId,
     });
     updated = result.doc;
   } else {
-    // Title-only and/or kind-only edits don't snapshot content; keep them on
-    // the existing path that doesn't touch doc_revisions.
+    // Title-only / kind-only / tags-only edits don't snapshot content; keep
+    // them on the path that doesn't touch doc_revisions.
     const fields: UpdateDocFields = {};
     if (nextTitle !== undefined) fields.title = nextTitle;
     if (hasKind) fields.kind = nextKind ?? null;
+    if (hasTags && nextTags) fields.tags = nextTags;
     updated = await updateDocBySlug(slug, fields);
     if (!updated) {
       return jsonError(404, "Document not found");
@@ -157,6 +174,7 @@ export async function PATCH(
       slug: updated.slug,
       title: updated.title,
       kind: updated.kind,
+      tags: updated.tags,
       content: updated.content,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,

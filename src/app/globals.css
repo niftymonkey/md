@@ -1,5 +1,21 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
+
+/* shadcn-ui's `dark:` variant. md's dark mode is data-attribute driven
+   (`[data-theme="dark"]`) with `prefers-color-scheme: dark` as the default
+   when no explicit `data-theme` is set. Express both so any future shadcn
+   component with a `dark:` override fires correctly. */
+@custom-variant dark {
+  &:where([data-theme="dark"] *, [data-theme="dark"]) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"]) *, :not([data-theme="light"])) {
+      @slot;
+    }
+  }
+}
 
 :root {
   --paper: oklch(95% 0.008 145);
@@ -13,6 +29,26 @@
   --selection: oklch(64% 0.14 85 / 0.22);
   --shadow-soft: 0 4px 24px oklch(20% 0.014 240 / 0.10);
   --md-article-max: 72ch;
+
+  /* Bridge to shadcn-ui's expected token names. All values resolve to md's
+     existing tokens, so dark-mode flips automatically through the cascade. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--paper-warm);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --accent: color-mix(in oklch, var(--ochre) 16%, var(--paper));
+  --accent-foreground: var(--ink);
+  --destructive: oklch(58% 0.20 25);
+  --input: var(--border);
+  --ring: var(--ochre);
+  --radius: 0.5rem;
 }
 
 :root[data-width="wide"] {
@@ -123,6 +159,7 @@
     --canvas: oklch(13% 0.014 220);
     --selection: oklch(76% 0.14 85 / 0.24);
     --shadow-soft: 0 4px 24px oklch(0% 0 0 / 0.4);
+    --destructive: oklch(68% 0.18 25);
   }
 }
 
@@ -132,6 +169,7 @@
   --ink: oklch(92% 0.012 100);
   --border: oklch(32% 0.014 220);
   --muted: oklch(64% 0.018 110);
+  --destructive: oklch(68% 0.18 25);
   --ochre: oklch(76% 0.14 85);
   --ochre-deep: oklch(82% 0.13 80);
   --canvas: oklch(13% 0.014 220);
@@ -151,6 +189,28 @@
   --font-sans: var(--font-inter-tight);
   --font-mono: var(--font-geist-mono);
   --shadow-soft: var(--shadow-soft);
+
+  /* shadcn-ui token bridge — see :root above for the source values. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 body {

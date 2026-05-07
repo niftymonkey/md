@@ -5,11 +5,12 @@ import { resolveTitle } from "@/lib/title";
 import { stripMarkdown } from "@/lib/strip-md";
 import { insertDoc } from "@/lib/db";
 import { parseKind } from "@/lib/kind";
+import { parseTags } from "@/lib/tags";
 
 const MAX_BYTES = 1024 * 1024;
 const MAX_SLUG_RETRIES = 5;
 
-type UploadInput = { content: string; title?: string; kind?: unknown };
+type UploadInput = { content: string; title?: string; kind?: unknown; tags?: unknown };
 
 function jsonError(status: number, message: string) {
   return new Response(JSON.stringify({ error: message }), {
@@ -95,6 +96,11 @@ export async function POST(req: NextRequest) {
     return jsonError(400, kindResult.error);
   }
 
+  const tagsResult = parseTags(parsed.tags);
+  if (!tagsResult.ok) {
+    return jsonError(400, tagsResult.error);
+  }
+
   const title = resolveTitle(content, parsed.title);
   const searchText = stripMarkdown(content);
 
@@ -108,6 +114,7 @@ export async function POST(req: NextRequest) {
         title,
         content,
         kind: kindResult.value,
+        tags: tagsResult.value,
         searchText,
       });
       const viewUrl = buildViewUrl(req, doc.slug);
@@ -124,6 +131,7 @@ export async function POST(req: NextRequest) {
           slug: doc.slug,
           title: doc.title,
           kind: doc.kind,
+          tags: doc.tags,
           viewUrl,
           createdAt: doc.createdAt,
         }),

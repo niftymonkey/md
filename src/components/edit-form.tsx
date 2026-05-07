@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MobileBar } from "@/components/mobile-bar";
+import { TagInput } from "@/components/tag-input";
 
 const MAX_BYTES = 1024 * 1024;
 
@@ -10,7 +11,14 @@ type Props = {
   slug: string;
   initialContent: string;
   initialTitle: string;
+  initialTags: string[];
 };
+
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
 
 function macKey(k: string): string {
   if (k === "mod") return "⌘";
@@ -28,17 +36,23 @@ export function EditForm({
   slug,
   initialContent,
   initialTitle,
+  initialTags,
 }: Props) {
   const [content, setContent] = useState(initialContent);
   const [title, setTitle] = useState(initialTitle);
+  const [tags, setTags] = useState<string[]>(initialTags);
   const [savedContent, setSavedContent] = useState(initialContent);
   const [savedTitle, setSavedTitle] = useState(initialTitle);
+  const [savedTags, setSavedTags] = useState<string[]>(initialTags);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const router = useRouter();
 
-  const dirty = content !== savedContent || title !== savedTitle;
+  const dirty =
+    content !== savedContent ||
+    title !== savedTitle ||
+    !arraysEqual(tags, savedTags);
 
   async function save() {
     if (saving) return;
@@ -54,9 +68,14 @@ export function EditForm({
     if (!dirty) return;
 
     const normalizedTitle = title.trim();
-    const payload: { content?: string; title?: string | null } = {};
+    const payload: {
+      content?: string;
+      title?: string | null;
+      tags?: string[];
+    } = {};
     if (content !== savedContent) payload.content = content;
     if (title !== savedTitle) payload.title = normalizedTitle || null;
+    if (!arraysEqual(tags, savedTags)) payload.tags = tags;
 
     setSaving(true);
     let response: Response;
@@ -87,6 +106,7 @@ export function EditForm({
 
     setSavedContent(content);
     setSavedTitle(normalizedTitle);
+    setSavedTags(tags);
     setTitle(normalizedTitle);
     setSaving(false);
     setJustSaved(true);
@@ -120,7 +140,7 @@ export function EditForm({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, title, dirty, saving]);
+  }, [content, title, tags, dirty, saving]);
 
   let statusLabel: string;
   let statusClass: string;
@@ -148,6 +168,7 @@ export function EditForm({
         aria-label="Title"
         className="block h-11 w-full rounded-md border border-border bg-paper-warm px-3.5 text-base font-semibold tracking-[-0.01em] placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-ochre"
       />
+      <TagInput value={tags} onChange={setTags} />
       <textarea
         value={content}
         onChange={(e) => {

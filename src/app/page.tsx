@@ -4,14 +4,30 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { isEmailAllowed } from "@/lib/access";
 import { signOutAction } from "@/lib/auth-actions";
 import { DocList } from "@/components/doc-list";
+import { TagFilter } from "@/components/tag-filter";
+import { listTagUsage } from "@/lib/db";
+import { parseTagsFilter } from "@/lib/tags";
 import { MobileBar, MobileBarLink, PlusGlyph } from "@/components/mobile-bar";
 
-export default async function Home() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const { user } = await withAuth();
 
   if (!user) {
     redirect("/auth");
   }
+
+  const params = await searchParams;
+  const tagsParam = typeof params.tags === "string" ? params.tags : null;
+  const parsedTags = parseTagsFilter(tagsParam);
+  // Silently treat malformed `?tags=` as no filter — the dashboard isn't a
+  // place to surface validation errors, and a stray bookmark shouldn't 4xx.
+  const activeTags = parsedTags.ok ? parsedTags.value : [];
 
   if (!isEmailAllowed(user.email)) {
     return (
@@ -80,7 +96,11 @@ export default async function Home() {
           New document
         </Link>
       </div>
-      <DocList ownerId={user.id} />
+      <TagFilter
+        tags={await listTagUsage(user.id)}
+        active={activeTags}
+      />
+      <DocList ownerId={user.id} tags={activeTags} />
       <MobileBar palette>
         <MobileBarLink href="/new" label="New document" variant="primary">
           <PlusGlyph />
