@@ -43,8 +43,16 @@ async function setupAuthorizedDoc(content: string) {
   return { token, doc };
 }
 
-function postReq(slug: string, body: unknown, token: string | null) {
-  const headers: Record<string, string> = { "content-type": "application/json" };
+function postReq(
+  slug: string,
+  body: unknown,
+  token: string | null,
+  extraHeaders: Record<string, string> = {},
+) {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    ...extraHeaders,
+  };
   if (token) headers.authorization = `Bearer ${token}`;
   const req = new NextRequest(
     `http://localhost/api/agent/docs/${slug}/edits`,
@@ -468,5 +476,171 @@ describe("POST /api/agent/docs/[slug]/edits — dryRun", () => {
 
     const listed = await RevisionLog.list(doc.id);
     expect(listed.revisions).toHaveLength(0);
+  });
+});
+
+describe("POST /api/agent/docs/[slug]/edits — If-Match", () => {
+  it("succeeds when If-Match matches the doc's current revisionId", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello foo\n");
+    // First write to populate current_revision_id.
+    const first = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "foo", replace: "bar" }] },
+      token.plaintext,
+    );
+    const firstBody = (await first.json()) as { revisionId: string };
+
+    const second = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "bar", replace: "baz" }] },
+      token.plaintext,
+      { "if-match": firstBody.revisionId },
+    );
+    expect(second.status).toBe(200);
+    const secondBody = (await second.json()) as {
+      doc: { content: string };
+      revisionId: string;
+    };
+    expect(secondBody.doc.content).toBe("hello baz\n");
+    expect(secondBody.revisionId).not.toBe(firstBody.revisionId);
+  });
+
+  it("returns 412 with currentRevisionId when If-Match is stale", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello foo\n");
+    const first = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "foo", replace: "bar" }] },
+      token.plaintext,
+    );
+    const firstBody = (await first.json()) as { revisionId: string };
+
+    // Land an unrelated edit so the current revision id moves on.
+    const second = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "bar", replace: "baz" }] },
+      token.plaintext,
+    );
+    const secondBody = (await second.json()) as { revisionId: string };
+
+    // Try to apply with the stale token from the first write.
+    const stale = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "baz", replace: "qux" }] },
+      token.plaintext,
+      { "if-match": firstBody.revisionId },
+    );
+    expect(stale.status).toBe(412);
+    const staleBody = (await stale.json()) as {
+      error: string;
+      currentRevisionId: string;
+    };
+    expect(staleBody.error).toBe("revision_mismatch");
+    expect(staleBody.currentRevisionId).toBe(secondBody.revisionId);
+
+    // No stray write was recorded for the stale attempt.
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(2);
+  });
+
+  it("returns 412 when If-Match is sent but the doc has no revisions yet", async () => {
+    const { token, doc } = await setupAuthorizedDoc("seed\n");
+    const res = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "seed", replace: "x" }] },
+      token.plaintext,
+      { "if-match": "rv_anything" },
+    );
+    expect(res.status).toBe(412);
+    const body = (await res.json()) as {
+      error: string;
+      currentRevisionId: string | null;
+    };
+    expect(body.error).toBe("revision_mismatch");
+    expect(body.currentRevisionId).toBeNull();
+  });
+
+  it("rejects an empty If-Match header with 400", async () => {
+    const { token, doc } = await setupAuthorizedDoc("seed\n");
+    const res = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "seed", replace: "x" }] },
+      token.plaintext,
+      { "if-match": "" },
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores If-Match when not sent (no regression for non-opting agents)", async () => {
+    const { token, doc } = await setupAuthorizedDoc("seed\n");
+    // Two sequential writes without If-Match — both should land.
+    const first = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "seed", replace: "one" }] },
+      token.plaintext,
+    );
+    expect(first.status).toBe(200);
+    const second = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "one", replace: "two" }] },
+      token.plaintext,
+    );
+    expect(second.status).toBe(200);
+    const body = (await second.json()) as { doc: { content: string } };
+    expect(body.doc.content).toBe("two\n");
+  });
+
+  it("dryRun + stale If-Match returns 412 with no write", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello foo\n");
+    await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "foo", replace: "bar" }] },
+      token.plaintext,
+    );
+
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "bar", replace: "baz" }],
+        dryRun: true,
+      },
+      token.plaintext,
+      { "if-match": "rv_stale" },
+    );
+    expect(res.status).toBe(412);
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(1);
+  });
+
+  it("dryRun + matching If-Match returns the preview without bumping the revision", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello foo\n");
+    const first = await postReq(
+      doc.slug,
+      { ops: [{ type: "replace", find: "foo", replace: "bar" }] },
+      token.plaintext,
+    );
+    const firstBody = (await first.json()) as { revisionId: string };
+
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "bar", replace: "baz" }],
+        dryRun: true,
+      },
+      token.plaintext,
+      { "if-match": firstBody.revisionId },
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      doc: { content: string };
+      revisionId: string | null;
+      dryRun: boolean;
+    };
+    expect(body.doc.content).toBe("hello baz\n");
+    expect(body.revisionId).toBeNull();
+    expect(body.dryRun).toBe(true);
+
+    const listed = await RevisionLog.list(doc.id);
+    // Only the first write recorded a revision; the dryRun did not.
+    expect(listed.revisions).toHaveLength(1);
   });
 });

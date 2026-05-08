@@ -33,6 +33,13 @@ export type RecordInput = {
   summary: string | null;
   source: RevisionSource;
   ownerId: string;
+  /**
+   * Optional pre-generated external_id. Lets callers (e.g. writeDocContent)
+   * weave the same value into related writes in the same transaction so
+   * `docs.current_revision_id` and `doc_revisions.external_id` are populated
+   * in lockstep without a second round trip.
+   */
+  externalId?: string;
 };
 
 export type RecordResult = {
@@ -40,11 +47,15 @@ export type RecordResult = {
   createdAt: Date;
 };
 
+export function generateExternalId(): string {
+  return `rv_${generateId()}`;
+}
+
 export async function record(
   input: RecordInput,
   runner: Runner = sql,
 ): Promise<RecordResult> {
-  const externalId = `rv_${generateId()}`;
+  const externalId = input.externalId ?? generateExternalId();
   const { bytesAdded, bytesRemoved } = computeDiff(
     input.prevContent,
     input.nextContent,

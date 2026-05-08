@@ -96,9 +96,32 @@ export async function POST(
     dryRun = body.dryRun;
   }
 
+  // Optimistic concurrency: agents that opt in pass the revisionId they
+  // last read in If-Match. We re-check under FOR UPDATE inside writeDocContent
+  // to close the race between this read and the write, but an early check
+  // here short-circuits dryRun and saves work in the common stale case.
+  const ifMatchHeader = req.headers.get("if-match");
+  const expectedRevisionId = ifMatchHeader?.trim() || null;
+  if (ifMatchHeader !== null && expectedRevisionId === null) {
+    return jsonError(400, "If-Match header must not be empty");
+  }
+
   const owned = await requireOwnedDoc(req, slug);
   if (!owned.ok) return owned.response;
   const { auth, doc } = owned;
+
+  if (
+    expectedRevisionId !== null &&
+    doc.currentRevisionId !== expectedRevisionId
+  ) {
+    return new Response(
+      JSON.stringify({
+        error: "revision_mismatch",
+        currentRevisionId: doc.currentRevisionId,
+      }),
+      { status: 412, headers: { "content-type": "application/json" } },
+    );
+  }
 
   const result = apply(doc.content, parsed.ops);
   if (!result.ok) {
@@ -178,7 +201,17 @@ export async function POST(
     summary,
     source: "agent",
     ownerId: auth.ownerId,
+    expectedRevisionId: expectedRevisionId ?? undefined,
   });
+  if (!writeResult.ok) {
+    return new Response(
+      JSON.stringify({
+        error: "revision_mismatch",
+        currentRevisionId: writeResult.currentRevisionId,
+      }),
+      { status: 412, headers: { "content-type": "application/json" } },
+    );
+  }
 
   revalidatePath("/");
   revalidatePath(`/v/${slug}`);
