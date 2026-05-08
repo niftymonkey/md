@@ -342,3 +342,131 @@ describe("POST /api/agent/docs/[slug]/edits — content size limit", () => {
     expect(res.status).toBe(413);
   });
 });
+
+describe("POST /api/agent/docs/[slug]/edits — dryRun", () => {
+  it("returns the would-be content without writing or recording a revision", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello foo world\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "foo", replace: "bar" }],
+        dryRun: true,
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      doc: { content: string; slug: string };
+      revisionId: string | null;
+      dryRun: boolean;
+    };
+    expect(body.doc.content).toBe("hello bar world\n");
+    expect(body.revisionId).toBeNull();
+    expect(body.dryRun).toBe(true);
+
+    const { getDocBySlug } = await import("@/lib/db");
+    const after = await getDocBySlug(doc.slug);
+    expect(after?.content).toBe("hello foo world\n");
+
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(0);
+  });
+
+  it("returns the same structured 409 shape for ambiguous matches without recording a revision", async () => {
+    const content = "foo line one\nfoo line two\n";
+    const { token, doc } = await setupAuthorizedDoc(content);
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "foo", replace: "bar" }],
+        dryRun: true,
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as {
+      error: string;
+      failedAt: number;
+      matchCount: number;
+    };
+    expect(body.error).toBe("ambiguous_match");
+    expect(body.failedAt).toBe(0);
+    expect(body.matchCount).toBe(2);
+
+    const { getDocBySlug } = await import("@/lib/db");
+    const after = await getDocBySlug(doc.slug);
+    expect(after?.content).toBe(content);
+
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(0);
+  });
+
+  it("returns 409 no_match for missing queries without writing", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "missing", replace: "x" }],
+        dryRun: true,
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("no_match");
+
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(0);
+  });
+
+  it("rejects dryRun when it is not a boolean", async () => {
+    const { token, doc } = await setupAuthorizedDoc("x\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "x", replace: "y" }],
+        dryRun: "yes",
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("still writes normally when dryRun is false", async () => {
+    const { token, doc } = await setupAuthorizedDoc("hello foo world\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "foo", replace: "bar" }],
+        dryRun: false,
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      doc: { content: string };
+      revisionId: string | null;
+      dryRun?: boolean;
+    };
+    expect(body.doc.content).toBe("hello bar world\n");
+    expect(body.revisionId).toMatch(/^rv_/);
+    expect(body.dryRun).toBeUndefined();
+  });
+
+  it("returns 413 when the would-be content exceeds 1 MB without writing", async () => {
+    const { token, doc } = await setupAuthorizedDoc("seed\n");
+    const huge = "x".repeat(1024 * 1024 + 10);
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [{ type: "replace", find: "seed", replace: huge }],
+        dryRun: true,
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(413);
+
+    const listed = await RevisionLog.list(doc.id);
+    expect(listed.revisions).toHaveLength(0);
+  });
+});

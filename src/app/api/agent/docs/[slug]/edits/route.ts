@@ -9,7 +9,7 @@ import { apply, type ApplierError } from "@/lib/operation-applier";
 
 const MAX_BYTES = 1024 * 1024;
 
-type Body = { ops?: unknown; summary?: unknown };
+type Body = { ops?: unknown; summary?: unknown; dryRun?: unknown };
 
 function applierErrorBody(
   error: ApplierError,
@@ -88,6 +88,14 @@ export async function POST(
     summary = body.summary;
   }
 
+  let dryRun = false;
+  if (body.dryRun !== undefined) {
+    if (typeof body.dryRun !== "boolean") {
+      return jsonError(400, "dryRun must be a boolean");
+    }
+    dryRun = body.dryRun;
+  }
+
   const owned = await requireOwnedDoc(req, slug);
   if (!owned.ok) return owned.response;
   const { auth, doc } = owned;
@@ -102,6 +110,33 @@ export async function POST(
 
   if (Buffer.byteLength(result.content, "utf8") > MAX_BYTES) {
     return jsonError(413, "Content exceeds 1MB limit");
+  }
+
+  if (dryRun) {
+    // setContent re-derives title from the new H1; mirror that here so the
+    // preview matches what a real call would persist.
+    const isSetContent =
+      parsed.ops.length === 1 && parsed.ops[0]!.type === "setContent";
+    const previewTitle = isSetContent
+      ? resolveTitle(result.content, undefined)
+      : resolveTitle(result.content, doc.title);
+    return new Response(
+      JSON.stringify({
+        doc: {
+          id: doc.id,
+          slug: doc.slug,
+          title: previewTitle,
+          kind: doc.kind,
+          tags: doc.tags,
+          content: result.content,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        },
+        revisionId: null,
+        dryRun: true,
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
   }
 
   // No-op short-circuit: skip the chokepoint write so a no-op batch doesn't
