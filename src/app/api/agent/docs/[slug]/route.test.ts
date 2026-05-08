@@ -84,6 +84,33 @@ describe("GET /api/agent/docs/[slug]", () => {
     expect(body.lineCount).toBe(0);
   });
 
+  it("returns revisionId: null for a fresh doc with no revisions", async () => {
+    const { token, doc } = await setupAuthorizedDoc("first\n", "Fresh");
+    const res = await getReq(doc.slug, token.plaintext);
+    const body = (await res.json()) as { revisionId: string | null };
+    expect(body.revisionId).toBeNull();
+  });
+
+  it("returns the latest revision's external_id after an edit", async () => {
+    const { token, doc } = await setupAuthorizedDoc("seed\n", "Edited");
+    // Drive a write through the chokepoint so current_revision_id is set.
+    const { writeDocContent } = await import("@/lib/doc-mutation-path");
+    const write = await writeDocContent({
+      docId: doc.id,
+      newContent: "edited\n",
+      newSearchText: "edited",
+      summary: null,
+      source: "agent",
+      ownerId: TEST_OWNER,
+    });
+    if (!write.ok) throw new Error("setup write failed");
+
+    const res = await getReq(doc.slug, token.plaintext);
+    const body = (await res.json()) as { revisionId: string | null };
+    expect(body.revisionId).toBe(write.revisionId);
+    expect(body.revisionId).toMatch(/^rv_/);
+  });
+
   it("returns 401 without auth", async () => {
     const { doc } = await setupAuthorizedDoc("x\n");
     const res = await getReq(doc.slug, null);

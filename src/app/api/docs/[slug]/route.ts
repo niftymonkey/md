@@ -151,6 +151,13 @@ export async function PATCH(
       source,
       ownerId: auth.ownerId,
     });
+    if (!result.ok) {
+      // PATCH does not pass expectedRevisionId, so this branch is unreachable
+      // — but the typed union forces an explicit acknowledgement.
+      throw new Error(
+        "writeDocContent returned revision_mismatch without expectedRevisionId",
+      );
+    }
     updated = result.doc;
   } else {
     // Title-only / kind-only / tags-only edits don't snapshot content; keep

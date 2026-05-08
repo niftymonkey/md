@@ -23,6 +23,10 @@ export async function GET(
       // (and don't get bit by trailing-newline off-by-ones when planning
       // line-addressed ops).
       lineCount: visibleLineCount(doc.content),
+      // Optimistic-concurrency token. Echo this back in `If-Match` on the
+      // next edit to ensure no other writer changed the doc in between.
+      // null when the doc has never been edited since creation.
+      revisionId: doc.currentRevisionId,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     }),

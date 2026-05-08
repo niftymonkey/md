@@ -14,6 +14,12 @@ export type Doc = {
   searchText: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * external_id of the most recent doc_revisions row for this doc, or null
+   * if the doc has never been edited since creation. Surfaced on the agent
+   * GET as the If-Match token.
+   */
+  currentRevisionId: string | null;
 };
 
 export type DocSummary = Pick<
@@ -32,6 +38,7 @@ type DocRow = {
   search_text: string | null;
   created_at: Date;
   updated_at: Date;
+  current_revision_id: string | null;
 };
 
 type DocSummaryRow = {
@@ -56,6 +63,7 @@ function rowToDoc(row: DocRow): Doc {
     searchText: row.search_text,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    currentRevisionId: row.current_revision_id,
   };
 }
 
@@ -91,7 +99,7 @@ export async function insertDoc(input: {
   const result = await sql<DocRow>`
     INSERT INTO docs (slug, owner_id, title, content, kind, tags, search_text)
     VALUES (${input.slug}, ${input.ownerId}, ${input.title}, ${input.content}, ${input.kind}, ${toPgTextArray(input.tags ?? [])}, ${input.searchText})
-    RETURNING id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at
+    RETURNING id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at, current_revision_id
   `;
   const row = result.rows[0];
   if (!row) throw new Error("INSERT returned no rows");
@@ -135,7 +143,7 @@ export async function updateDocBySlug(
     UPDATE docs
     SET ${sets.join(", ")}
     WHERE slug = ${slugParam}
-    RETURNING id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at
+    RETURNING id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at, current_revision_id
   `;
 
   const result = await sql.query<DocRow>(text, values);
@@ -155,7 +163,7 @@ export async function deleteDocBySlug(
 
 export async function getDocBySlug(slug: string): Promise<Doc | null> {
   const result = await sql<DocRow>`
-    SELECT id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at
+    SELECT id, slug, owner_id, title, content, kind, tags, search_text, created_at, updated_at, current_revision_id
     FROM docs
     WHERE slug = ${slug}
     LIMIT 1

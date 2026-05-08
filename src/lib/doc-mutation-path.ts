@@ -13,12 +13,34 @@ export type WriteDocContentInput = {
   summary: string | null;
   source: RevisionLog.RevisionSource;
   ownerId: string;
+  /**
+   * Optional optimistic-concurrency token. When provided, the write only
+   * proceeds if `docs.current_revision_id` (read under FOR UPDATE) equals
+   * this value. Mismatch returns {ok:false, kind:"revision_mismatch", ...}
+   * so the caller can surface 412 without bubbling exceptions.
+   *
+   * For a doc that has never been edited (current_revision_id IS NULL) the
+   * caller should omit this field — there is no token to compare against.
+   * Concurrency protection becomes available on the first edit.
+   */
+  expectedRevisionId?: string;
 };
 
-export type WriteDocContentResult = {
+export type WriteDocContentSuccess = {
+  ok: true;
   doc: Doc;
   revisionId: string;
 };
+
+export type WriteDocContentMismatch = {
+  ok: false;
+  kind: "revision_mismatch";
+  currentRevisionId: string | null;
+};
+
+export type WriteDocContentResult =
+  | WriteDocContentSuccess
+  | WriteDocContentMismatch;
 
 type DocRow = {
   id: string;
@@ -31,6 +53,7 @@ type DocRow = {
   search_text: string | null;
   created_at: Date;
   updated_at: Date;
+  current_revision_id: string | null;
 };
 
 function rowToDoc(row: DocRow): Doc {
@@ -45,9 +68,9 @@ function rowToDoc(row: DocRow): Doc {
     searchText: row.search_text,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    currentRevisionId: row.current_revision_id,
   };
 }
-
 
 export async function writeDocContent(
   input: WriteDocContentInput,
@@ -60,14 +83,34 @@ export async function writeDocContent(
     // UPDATE, both writers can read the same prevContent and the second
     // revision would snapshot stale content instead of the actual immediate
     // prior state.
-    const prevResult = await client.query<{ content: string }>(
-      `SELECT content FROM docs WHERE id = $1 FOR UPDATE`,
+    const prevResult = await client.query<{
+      content: string;
+      current_revision_id: string | null;
+    }>(
+      `SELECT content, current_revision_id FROM docs WHERE id = $1 FOR UPDATE`,
       [input.docId],
     );
     const prev = prevResult.rows[0];
     if (!prev) {
       throw new Error(`docs row not found for id=${input.docId}`);
     }
+
+    if (
+      input.expectedRevisionId !== undefined &&
+      prev.current_revision_id !== input.expectedRevisionId
+    ) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        kind: "revision_mismatch",
+        currentRevisionId: prev.current_revision_id,
+      };
+    }
+
+    // Pre-generate the new revision external_id so the docs UPDATE and the
+    // doc_revisions INSERT can both reference it within this transaction —
+    // keeping the cache (current_revision_id) and the canonical row in sync.
+    const newRevisionExternalId = RevisionLog.generateExternalId();
 
     const sets: string[] = ["content = $1"];
     const values: unknown[] = [input.newContent];
@@ -87,12 +130,13 @@ export async function writeDocContent(
     if (input.newTags !== undefined) {
       sets.push(`tags = ${bind(toPgTextArray(input.newTags))}`);
     }
+    sets.push(`current_revision_id = ${bind(newRevisionExternalId)}`);
     sets.push(`updated_at = now()`);
     const docIdParam = bind(input.docId);
     const updateResult = await client.query<DocRow>(
       `UPDATE docs SET ${sets.join(", ")} WHERE id = ${docIdParam}
        RETURNING id, slug, owner_id, title, content, kind, tags, search_text,
-                 created_at, updated_at`,
+                 created_at, updated_at, current_revision_id`,
       values,
     );
     const updatedRow = updateResult.rows[0];
@@ -108,12 +152,17 @@ export async function writeDocContent(
         summary: input.summary,
         source: input.source,
         ownerId: input.ownerId,
+        externalId: newRevisionExternalId,
       },
       client,
     );
 
     await client.query("COMMIT");
-    return { doc: rowToDoc(updatedRow), revisionId: revision.externalId };
+    return {
+      ok: true,
+      doc: rowToDoc(updatedRow),
+      revisionId: revision.externalId,
+    };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

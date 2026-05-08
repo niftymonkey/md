@@ -19,6 +19,15 @@ async function createTestDoc(content: string): Promise<Doc> {
   });
 }
 
+function expectOk(
+  result: DocMutationPath.WriteDocContentResult,
+): DocMutationPath.WriteDocContentSuccess {
+  if (!result.ok) {
+    throw new Error(`expected ok, got ${result.kind}`);
+  }
+  return result;
+}
+
 beforeAll(() => {
   if (!process.env.POSTGRES_URL) {
     throw new Error(
@@ -34,14 +43,16 @@ afterAll(async () => {
 describe("DocMutationPath.writeDocContent — return shape", () => {
   it("returns the updated doc so callers don't need a second query", async () => {
     const doc = await createTestDoc("v0");
-    const result = await DocMutationPath.writeDocContent({
-      docId: doc.id,
-      newContent: "v1",
-      newTitle: "Renamed",
-      summary: null,
-      source: "manual",
-      ownerId: TEST_OWNER,
-    });
+    const result = expectOk(
+      await DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "v1",
+        newTitle: "Renamed",
+        summary: null,
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+    );
     expect(result.doc.content).toBe("v1");
     expect(result.doc.title).toBe("Renamed");
     expect(result.doc.id).toBe(doc.id);
@@ -101,13 +112,15 @@ describe("DocMutationPath.writeDocContent", () => {
   it("updates doc content and records a revision capturing the previous content", async () => {
     const doc = await createTestDoc("# Original\n\nbody");
 
-    const result = await DocMutationPath.writeDocContent({
-      docId: doc.id,
-      newContent: "# Updated\n\nbody",
-      summary: "Title rename",
-      source: "manual",
-      ownerId: TEST_OWNER,
-    });
+    const result = expectOk(
+      await DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "# Updated\n\nbody",
+        summary: "Title rename",
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+    );
 
     // Doc row reflects the new content.
     const persisted = await getDocBySlug(doc.slug);
@@ -123,6 +136,90 @@ describe("DocMutationPath.writeDocContent", () => {
   });
 });
 
+describe("DocMutationPath.writeDocContent — expectedRevisionId", () => {
+  it("succeeds when the expected revisionId matches the doc's current_revision_id", async () => {
+    const doc = await createTestDoc("v0");
+    // First write populates current_revision_id.
+    const first = expectOk(
+      await DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "v1",
+        summary: null,
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+    );
+
+    const second = expectOk(
+      await DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "v2",
+        summary: null,
+        source: "manual",
+        ownerId: TEST_OWNER,
+        expectedRevisionId: first.revisionId,
+      }),
+    );
+    expect(second.doc.content).toBe("v2");
+    expect(second.doc.currentRevisionId).toBe(second.revisionId);
+  });
+
+  it("returns revision_mismatch when expectedRevisionId is stale", async () => {
+    const doc = await createTestDoc("v0");
+    const first = expectOk(
+      await DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "v1",
+        summary: null,
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+    );
+    // Advance current_revision_id past `first` without using expectedRevisionId.
+    expectOk(
+      await DocMutationPath.writeDocContent({
+        docId: doc.id,
+        newContent: "v2",
+        summary: null,
+        source: "manual",
+        ownerId: TEST_OWNER,
+      }),
+    );
+
+    const stale = await DocMutationPath.writeDocContent({
+      docId: doc.id,
+      newContent: "v3",
+      summary: null,
+      source: "manual",
+      ownerId: TEST_OWNER,
+      expectedRevisionId: first.revisionId,
+    });
+    expect(stale.ok).toBe(false);
+    if (stale.ok) throw new Error("unreachable");
+    expect(stale.kind).toBe("revision_mismatch");
+    expect(stale.currentRevisionId).not.toBe(first.revisionId);
+
+    // Doc content was not advanced by the stale attempt.
+    const persisted = await getDocBySlug(doc.slug);
+    expect(persisted?.content).toBe("v2");
+  });
+
+  it("returns revision_mismatch when expectedRevisionId is set but the doc has no revisions yet", async () => {
+    const doc = await createTestDoc("v0");
+    const result = await DocMutationPath.writeDocContent({
+      docId: doc.id,
+      newContent: "v1",
+      summary: null,
+      source: "manual",
+      ownerId: TEST_OWNER,
+      expectedRevisionId: "rv_anything",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.currentRevisionId).toBeNull();
+  });
+});
+
 describe("DocMutationPath.writeDocContent — concurrent writers", () => {
   it("serializes via FOR UPDATE so each revision snapshots the immediate prior state", async () => {
     // Two writers race against the same doc. With row-level locking, the
@@ -133,7 +230,7 @@ describe("DocMutationPath.writeDocContent — concurrent writers", () => {
     // matches whichever writer committed second.
     const doc = await createTestDoc("v0");
 
-    const [resultA, resultB] = await Promise.all([
+    const [rawA, rawB] = await Promise.all([
       DocMutationPath.writeDocContent({
         docId: doc.id,
         newContent: "vA",
@@ -149,6 +246,8 @@ describe("DocMutationPath.writeDocContent — concurrent writers", () => {
         ownerId: TEST_OWNER,
       }),
     ]);
+    const resultA = expectOk(rawA);
+    const resultB = expectOk(rawB);
 
     // The persisted content matches whichever writer committed last.
     const persisted = await getDocBySlug(doc.slug);

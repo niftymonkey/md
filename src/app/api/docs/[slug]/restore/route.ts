@@ -46,6 +46,13 @@ export async function POST(
     source: "restore",
     ownerId: auth.ownerId,
   });
+  if (!result.ok) {
+    // Restore does not pass expectedRevisionId, so this branch is
+    // unreachable — but the typed union forces an explicit acknowledgement.
+    throw new Error(
+      "writeDocContent returned revision_mismatch without expectedRevisionId",
+    );
+  }
 
   revalidatePath("/");
   revalidatePath(`/v/${slug}`);
