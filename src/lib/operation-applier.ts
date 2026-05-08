@@ -1,10 +1,12 @@
 import { findMatches, type PreviewLine } from "./match-resolver";
+import { resolveSection } from "./section-addresser";
 import type {
   EditOp,
   InsertAfterLineOp,
   InsertBeforeLineOp,
   DeleteLineRangeOp,
   ReplaceLineRangeOp,
+  ReplaceSectionOp,
 } from "./edit-op-schema";
 
 export type MatchPreview = {
@@ -36,7 +38,13 @@ export type ApplierError =
       to: number;
       documentLines: number;
     }
-  | { kind: "overlapping_line_ops"; conflictsWith: number };
+  | { kind: "overlapping_line_ops"; conflictsWith: number }
+  | { kind: "heading_not_found"; headingPath: string[] }
+  | {
+      kind: "ambiguous_heading";
+      headingPath: string[];
+      matchCount: number;
+    };
 
 export type ApplyResult =
   | { ok: true; content: string }
@@ -46,7 +54,8 @@ type LineAddressedOp =
   | InsertAfterLineOp
   | InsertBeforeLineOp
   | DeleteLineRangeOp
-  | ReplaceLineRangeOp;
+  | ReplaceLineRangeOp
+  | ReplaceSectionOp;
 
 const TO_END_SENTINEL = -1;
 
@@ -61,7 +70,8 @@ function isLineOp(op: EditOp): op is LineAddressedOp {
     op.type === "insertAfterLine" ||
     op.type === "insertBeforeLine" ||
     op.type === "deleteLineRange" ||
-    op.type === "replaceLineRange"
+    op.type === "replaceLineRange" ||
+    op.type === "replaceSection"
   );
 }
 
@@ -174,6 +184,35 @@ function resolveLineOp(
         // Empty content collapses to deletion (no empty line left behind).
         replacement = op.content === "" ? "" : op.content + "\n";
       }
+      return { ok: true, range: { start, end, replacement } };
+    }
+    case "replaceSection": {
+      const section = resolveSection(snapshot, op.headingPath);
+      if (!section.ok) {
+        if (section.error.kind === "heading_not_found") {
+          return {
+            ok: false,
+            error: {
+              kind: "heading_not_found",
+              headingPath: section.error.headingPath,
+            },
+          };
+        }
+        return {
+          ok: false,
+          error: {
+            kind: "ambiguous_heading",
+            headingPath: section.error.headingPath,
+            matchCount: section.error.matchCount,
+          },
+        };
+      }
+      const start = lineStartOffset(snapshot, section.fromLine);
+      const end =
+        section.toLine === visibleCount
+          ? snapshot.length
+          : lineStartOffset(snapshot, section.toLine + 1);
+      const replacement = op.content === "" ? "" : op.content + "\n";
       return { ok: true, range: { start, end, replacement } };
     }
   }

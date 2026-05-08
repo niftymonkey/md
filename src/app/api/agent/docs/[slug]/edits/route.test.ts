@@ -479,6 +479,153 @@ describe("POST /api/agent/docs/[slug]/edits — dryRun", () => {
   });
 });
 
+describe("POST /api/agent/docs/[slug]/edits — replaceSection", () => {
+  it("replaces a section addressed by heading path", async () => {
+    const initial = [
+      "# Intro",
+      "intro body",
+      "",
+      "# API",
+      "old api body",
+      "more old",
+      "",
+      "# Other",
+      "other body",
+      "",
+    ].join("\n");
+    const { token, doc } = await setupAuthorizedDoc(initial);
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          {
+            type: "replaceSection",
+            headingPath: ["API"],
+            content: "# API\nfresh api body",
+          },
+        ],
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { doc: { content: string } };
+    expect(body.doc.content).toBe(
+      [
+        "# Intro",
+        "intro body",
+        "",
+        "# API",
+        "fresh api body",
+        "# Other",
+        "other body",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("replaces a nested section without disturbing siblings", async () => {
+    const initial = [
+      "# API",
+      "blurb",
+      "## Errors",
+      "old errors",
+      "## Auth",
+      "auth body",
+      "",
+    ].join("\n");
+    const { token, doc } = await setupAuthorizedDoc(initial);
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          {
+            type: "replaceSection",
+            headingPath: ["API", "Errors"],
+            content: "## Errors\nnew errors body",
+          },
+        ],
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { doc: { content: string } };
+    expect(body.doc.content).toBe(
+      [
+        "# API",
+        "blurb",
+        "## Errors",
+        "new errors body",
+        "## Auth",
+        "auth body",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("returns 409 heading_not_found with the headingPath echoed back", async () => {
+    const { token, doc } = await setupAuthorizedDoc("# Intro\nbody\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          {
+            type: "replaceSection",
+            headingPath: ["Missing"],
+            content: "# Missing\nx",
+          },
+        ],
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as {
+      error: string;
+      headingPath: string[];
+    };
+    expect(body.error).toBe("heading_not_found");
+    expect(body.headingPath).toEqual(["Missing"]);
+  });
+
+  it("returns 409 ambiguous_heading with matchCount when duplicate headings exist", async () => {
+    const md = ["# API", "first", "# API", "second"].join("\n");
+    const { token, doc } = await setupAuthorizedDoc(md);
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          {
+            type: "replaceSection",
+            headingPath: ["API"],
+            content: "# API\nx",
+          },
+        ],
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as {
+      error: string;
+      matchCount: number;
+    };
+    expect(body.error).toBe("ambiguous_heading");
+    expect(body.matchCount).toBe(2);
+  });
+
+  it("rejects an empty headingPath at parse time with 400", async () => {
+    const { token, doc } = await setupAuthorizedDoc("# x\n");
+    const res = await postReq(
+      doc.slug,
+      {
+        ops: [
+          { type: "replaceSection", headingPath: [], content: "# x\nbody" },
+        ],
+      },
+      token.plaintext,
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("POST /api/agent/docs/[slug]/edits — If-Match", () => {
   it("succeeds when If-Match matches the doc's current revisionId", async () => {
     const { token, doc } = await setupAuthorizedDoc("hello foo\n");
