@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireOwnedDoc } from "@/lib/route-helpers";
+import { visibleLineCount } from "@/lib/operation-applier";
 
 export async function GET(
   req: NextRequest,
@@ -18,6 +19,10 @@ export async function GET(
       kind: doc.kind,
       tags: doc.tags,
       content: doc.content,
+      // Surfaced so agents don't have to re-implement the line-count rule
+      // (and don't get bit by trailing-newline off-by-ones when planning
+      // line-addressed ops).
+      lineCount: visibleLineCount(doc.content),
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     }),

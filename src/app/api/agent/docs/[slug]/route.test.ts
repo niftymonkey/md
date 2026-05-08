@@ -49,7 +49,7 @@ function getReq(slug: string, token: string | null) {
 }
 
 describe("GET /api/agent/docs/[slug]", () => {
-  it("returns 200 with content and updatedAt for an owned doc", async () => {
+  it("returns 200 with content, updatedAt, and lineCount for an owned doc", async () => {
     const { token, doc } = await setupAuthorizedDoc("# Hello\n\nbody\n", "Hi");
     const res = await getReq(doc.slug, token.plaintext);
     expect(res.status).toBe(200);
@@ -59,12 +59,29 @@ describe("GET /api/agent/docs/[slug]", () => {
       kind: string | null;
       content: string;
       updatedAt: string;
+      lineCount: number;
     };
     expect(body.slug).toBe(doc.slug);
     expect(body.title).toBe("Hi");
     expect(body.content).toBe("# Hello\n\nbody\n");
     expect(typeof body.updatedAt).toBe("string");
     expect(new Date(body.updatedAt).getTime()).toBeGreaterThan(0);
+    // 3 visible lines: "# Hello", "", "body" (trailing newline doesn't count).
+    expect(body.lineCount).toBe(3);
+  });
+
+  it("lineCount matches the applier's view (trailing newline irrelevant)", async () => {
+    const { token, doc } = await setupAuthorizedDoc("a\nb\nc\n", "T");
+    const res = await getReq(doc.slug, token.plaintext);
+    const body = (await res.json()) as { lineCount: number };
+    expect(body.lineCount).toBe(3);
+  });
+
+  it("lineCount is 0 for an empty doc", async () => {
+    const { token, doc } = await setupAuthorizedDoc("", "Empty");
+    const res = await getReq(doc.slug, token.plaintext);
+    const body = (await res.json()) as { lineCount: number };
+    expect(body.lineCount).toBe(0);
   });
 
   it("returns 401 without auth", async () => {

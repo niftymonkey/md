@@ -201,6 +201,61 @@ describe("parseEditOp — deleteLineRange", () => {
   });
 });
 
+describe("parseEditOp — setContent", () => {
+  it("accepts a setContent op with content", () => {
+    const result = parseEditOp({ type: "setContent", content: "new body" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.op).toEqual({ type: "setContent", content: "new body" });
+    }
+  });
+
+  it("accepts setContent with empty string (empties the doc)", () => {
+    const result = parseEditOp({ type: "setContent", content: "" });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects setContent with non-string content", () => {
+    const result = parseEditOp({ type: "setContent", content: 42 });
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("parseEditOp — to: -1 sentinel", () => {
+  it("accepts deleteLineRange with to: -1 (means end-of-doc)", () => {
+    const result = parseEditOp({ type: "deleteLineRange", from: 2, to: -1 });
+    expect(result.ok).toBe(true);
+    if (result.ok && result.op.type === "deleteLineRange") {
+      expect(result.op.to).toBe(-1);
+    }
+  });
+
+  it("accepts replaceLineRange with to: -1", () => {
+    const result = parseEditOp({
+      type: "replaceLineRange",
+      from: 1,
+      to: -1,
+      content: "x",
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("does NOT relax the from > to check when to is a positive integer", () => {
+    const result = parseEditOp({ type: "deleteLineRange", from: 5, to: 2 });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects to: -2 or other negative values", () => {
+    const result = parseEditOp({ type: "deleteLineRange", from: 1, to: -2 });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects to: 0", () => {
+    const result = parseEditOp({ type: "deleteLineRange", from: 1, to: 0 });
+    expect(result.ok).toBe(false);
+  });
+});
+
 describe("parseEditOp — replaceLineRange", () => {
   it("accepts a valid replaceLineRange", () => {
     const result = parseEditOp({
@@ -268,6 +323,22 @@ describe("parseEditOp — discriminator and shape", () => {
     const result = parseEditOp({ type: "moveLines", from: 1, to: 2 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/type|unknown/i);
+  });
+});
+
+describe("parseEditOps batch — setContent exclusivity", () => {
+  it("rejects a batch where setContent is mixed with other ops", () => {
+    const result = parseEditOps([
+      { type: "setContent", content: "x" },
+      { type: "replace", find: "a", replace: "b" },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/setContent.*alone|exclusive/i);
+  });
+
+  it("accepts a batch consisting solely of setContent", () => {
+    const result = parseEditOps([{ type: "setContent", content: "x" }]);
+    expect(result.ok).toBe(true);
   });
 });
 

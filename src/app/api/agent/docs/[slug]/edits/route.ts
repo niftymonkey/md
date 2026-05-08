@@ -125,10 +125,20 @@ export async function POST(
     );
   }
 
+  // setContent is a "save as" — re-derive title from the new H1 like upload
+  // does, so a fresh body doesn't keep an unrelated old title. For partial
+  // edits, preserve the existing title (resolveTitle with the old title as
+  // override is idempotent unless the H1 string itself changed).
+  const isSetContent =
+    parsed.ops.length === 1 && parsed.ops[0]!.type === "setContent";
+  const newTitle = isSetContent
+    ? resolveTitle(result.content, undefined)
+    : resolveTitle(result.content, doc.title);
+
   const writeResult = await writeDocContent({
     docId: doc.id,
     newContent: result.content,
-    newTitle: resolveTitle(result.content, doc.title),
+    newTitle,
     newSearchText: stripMarkdown(result.content),
     summary,
     source: "agent",
