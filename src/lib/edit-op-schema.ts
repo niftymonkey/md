@@ -47,13 +47,28 @@ export type SetContentOp = {
   content: string;
 };
 
+/**
+ * Replaces a section addressed by heading nesting. `headingPath` is a
+ * top-down trace of heading texts (e.g. ["API", "Errors"] resolves to the
+ * H_n "Errors" nested directly under H_(n-1) "API"). The replaced range
+ * spans from the matched heading line through the line before the next
+ * sibling-or-higher heading (or end of doc). `content` becomes the new
+ * section body and typically includes a heading line.
+ */
+export type ReplaceSectionOp = {
+  type: "replaceSection";
+  headingPath: string[];
+  content: string;
+};
+
 export type EditOp =
   | ReplaceOp
   | InsertAfterLineOp
   | InsertBeforeLineOp
   | DeleteLineRangeOp
   | ReplaceLineRangeOp
-  | SetContentOp;
+  | SetContentOp
+  | ReplaceSectionOp;
 
 export type ParseResult<T> =
   | { ok: true; op: T }
@@ -70,6 +85,7 @@ const KNOWN_TYPES = new Set([
   "deleteLineRange",
   "replaceLineRange",
   "setContent",
+  "replaceSection",
 ]);
 
 export const TO_END_SENTINEL = -1;
@@ -203,6 +219,49 @@ function parseSetContent(
   return { ok: true, op: { type: "setContent", content: input.content } };
 }
 
+function parseReplaceSection(
+  input: Record<string, unknown>,
+): ParseResult<ReplaceSectionOp> {
+  if (!Array.isArray(input.headingPath)) {
+    return {
+      ok: false,
+      error: "replaceSection: headingPath must be an array of strings",
+    };
+  }
+  if (input.headingPath.length === 0) {
+    return {
+      ok: false,
+      error: "replaceSection: headingPath must contain at least one entry",
+    };
+  }
+  for (let i = 0; i < input.headingPath.length; i++) {
+    const entry = input.headingPath[i];
+    if (typeof entry !== "string") {
+      return {
+        ok: false,
+        error: `replaceSection: headingPath[${i}] must be a string`,
+      };
+    }
+    if (entry.trim().length === 0) {
+      return {
+        ok: false,
+        error: `replaceSection: headingPath[${i}] must be non-empty`,
+      };
+    }
+  }
+  if (typeof input.content !== "string") {
+    return { ok: false, error: "replaceSection: content must be a string" };
+  }
+  return {
+    ok: true,
+    op: {
+      type: "replaceSection",
+      headingPath: input.headingPath as string[],
+      content: input.content,
+    },
+  };
+}
+
 export function parseEditOp(input: unknown): ParseResult<EditOp> {
   if (!isPlainObject(input)) {
     return { ok: false, error: "op must be a plain object" };
@@ -227,6 +286,8 @@ export function parseEditOp(input: unknown): ParseResult<EditOp> {
       return parseReplaceRange(input);
     case "setContent":
       return parseSetContent(input);
+    case "replaceSection":
+      return parseReplaceSection(input);
     default:
       return { ok: false, error: `unknown op type: ${type}` };
   }

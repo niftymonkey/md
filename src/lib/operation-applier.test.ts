@@ -247,6 +247,87 @@ describe("apply — to: -1 sentinel", () => {
   });
 });
 
+describe("apply — replaceSection op", () => {
+  const md = [
+    "# Intro",
+    "intro body",
+    "",
+    "# API",
+    "old api body",
+    "more old",
+    "",
+    "# Other",
+    "other body",
+    "",
+  ].join("\n");
+
+  it("replaces the addressed section, preserving siblings", () => {
+    const result = apply(md, [
+      {
+        type: "replaceSection",
+        headingPath: ["API"],
+        content: "# API\nfresh body",
+      },
+    ]);
+    expectOk(result);
+    expect(result.content).toBe(
+      [
+        "# Intro",
+        "intro body",
+        "",
+        "# API",
+        "fresh body",
+        "# Other",
+        "other body",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("returns heading_not_found for an unknown path", () => {
+    const result = apply(md, [
+      {
+        type: "replaceSection",
+        headingPath: ["Missing"],
+        content: "x",
+      },
+    ]);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.error.kind).toBe("heading_not_found");
+  });
+
+  it("returns ambiguous_heading when duplicates match", () => {
+    const dupes = ["# API", "first", "# API", "second"].join("\n");
+    const result = apply(dupes, [
+      {
+        type: "replaceSection",
+        headingPath: ["API"],
+        content: "# API\nx",
+      },
+    ]);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.error.kind).toBe("ambiguous_heading");
+  });
+
+  it("flags overlap when a replaceSection collides with a replaceLineRange in the same batch", () => {
+    // The "API" section spans lines 4–7. A replaceLineRange at lines 5–5 lands
+    // inside that same range, so the applier must flag overlapping_line_ops.
+    const result = apply(md, [
+      {
+        type: "replaceSection",
+        headingPath: ["API"],
+        content: "# API\nx",
+      },
+      { type: "replaceLineRange", from: 5, to: 5, content: "y" },
+    ]);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.error.kind).toBe("overlapping_line_ops");
+  });
+});
+
 describe("apply — empty ops batch", () => {
   it("returns the content unchanged for an empty batch", () => {
     // Defensive: parseEditOps rejects empty arrays at the boundary, but apply

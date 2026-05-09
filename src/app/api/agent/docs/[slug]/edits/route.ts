@@ -47,6 +47,19 @@ function applierErrorBody(
         failedAt,
         conflictsWith: error.conflictsWith,
       };
+    case "heading_not_found":
+      return {
+        error: "heading_not_found",
+        failedAt,
+        headingPath: error.headingPath,
+      };
+    case "ambiguous_heading":
+      return {
+        error: "ambiguous_heading",
+        failedAt,
+        headingPath: error.headingPath,
+        matchCount: error.matchCount,
+      };
   }
 }
 
