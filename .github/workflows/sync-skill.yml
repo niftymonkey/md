@@ -1,0 +1,61 @@
+# Keeps the hosted copy of the md-niftymonkey skill at
+# https://md.niftymonkey.dev/api/raw/80zOpiWz in sync with the in-repo source
+# at .claude/skills/md-niftymonkey/SKILL.md.
+#
+# Setup (one-time, by the operator who owns the skill doc):
+#   1. Generate a personal API token at https://md.niftymonkey.dev/settings.
+#   2. Save it as the repo secret named MD_API_KEY:
+#        gh secret set MD_API_KEY --body "<token>"
+#      The token must belong to the same WorkOS user that owns slug 80zOpiWz —
+#      otherwise PATCH returns 404.
+#
+# A 200 response from PATCH records a `cli`-source revision in the doc's
+# history, so every CI sync is auditable from /edit/80zOpiWz/revisions.
+
+name: Sync md-niftymonkey skill
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.claude/skills/md-niftymonkey/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-skill
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      SKILL_SLUG: 80zOpiWz
+      SKILL_PATH: .claude/skills/md-niftymonkey/SKILL.md
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PATCH hosted skill with repo content
+        env:
+          MD_API_KEY: ${{ secrets.MD_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MD_API_KEY:-}" ]; then
+            echo "MD_API_KEY secret is not set. See workflow header for setup."
+            exit 1
+          fi
+          if [ ! -f "$SKILL_PATH" ]; then
+            echo "Expected skill file at $SKILL_PATH but it is missing."
+            exit 1
+          fi
+          BODY=$(jq -nc --rawfile c "$SKILL_PATH" '{content: $c}')
+          curl -sS --fail-with-body -X PATCH \
+            "https://md.niftymonkey.dev/api/docs/$SKILL_SLUG" \
+            -H "Authorization: Bearer $MD_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$BODY" \
+            -o /tmp/sync-resp.json
+          echo "Synced skill to https://md.niftymonkey.dev/api/raw/$SKILL_SLUG"
+          jq '{slug, title, updatedAt}' /tmp/sync-resp.json
