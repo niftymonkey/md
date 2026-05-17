@@ -29,18 +29,28 @@ export function Mermaid({ chart }: { chart: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadMermaid()
-      .then((mermaid) => mermaid.render(id, chart))
-      .then(({ svg }) => {
-        if (!cancelled && containerRef.current) {
-          containerRef.current.innerHTML = svg;
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      });
+
+    const renderChart = async () => {
+      const mermaid = await loadMermaid();
+      // Wait for web fonts before rendering: mermaid sizes node boxes by
+      // measuring label text, and a not-yet-loaded font measures too narrow,
+      // which clips labels at the box edge once the real font swaps in.
+      if (typeof document !== "undefined" && document.fonts) {
+        await document.fonts.ready;
+      }
+      if (cancelled) return;
+      const { svg } = await mermaid.render(id, chart);
+      if (!cancelled && containerRef.current) {
+        containerRef.current.innerHTML = svg;
+      }
+    };
+
+    renderChart().catch((err) => {
+      if (!cancelled) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    });
+
     return () => {
       cancelled = true;
     };
