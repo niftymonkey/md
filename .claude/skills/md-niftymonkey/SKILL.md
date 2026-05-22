@@ -1,6 +1,6 @@
 ---
 name: md-niftymonkey
-description: Work with markdown on md.niftymonkey.dev: upload, fetch, edit, list, and delete. Use when the user asks to upload, share, or publish markdown to md.niftymonkey.dev, fetch a doc back, make targeted edits to an existing doc, replace a section by heading, preview an edit before committing, save a fresh full-doc version, coordinate edits with optimistic concurrency, or apply one set of edits across many docs at once. Triggers on phrases like "upload this to md.niftymonkey", "share this as a markdown link", "put this on md", "fix the typo on my md doc", "update the md doc at <slug>", "rewrite the API section on <slug>", "preview this edit on md", "rename a term across all my md docs", or pointing at a `.md` file with intent to share or modify on this service. Handles atomic find/replace, line-addressed edits, heading-addressed section replacement, dry-run validation, If-Match optimistic concurrency, cross-document batch edits, and structured retry errors.
+description: Work with markdown on md.niftymonkey.dev: upload, fetch, search, edit, list, and delete. Use when the user asks to upload, share, or publish markdown to md.niftymonkey.dev, fetch a doc back, find which of their docs mention a term, make targeted edits to an existing doc, replace a section by heading, preview an edit before committing, save a fresh full-doc version, coordinate edits with optimistic concurrency, or apply one set of edits across many docs at once. Triggers on phrases like "upload this to md.niftymonkey", "share this as a markdown link", "put this on md", "fix the typo on my md doc", "update the md doc at <slug>", "rewrite the API section on <slug>", "preview this edit on md", "rename a term across all my md docs", "which of my md docs mention X", or pointing at a `.md` file with intent to share or modify on this service. Handles atomic find/replace, line-addressed edits, heading-addressed section replacement, dry-run validation, If-Match optimistic concurrency, cross-document batch edits, owner-scoped full-text search with per-match contexts, and structured retry errors.
 ---
 
 # md-niftymonkey
@@ -355,6 +355,51 @@ Per-doc `error` values: `not_found` (slug unknown or owned by someone else), `co
 Request-level problems fail the whole call before any doc is touched: malformed JSON, a missing or empty `operations` array, a malformed op (400, naming the offending `operations[i]`), a duplicate slug (400), more than 50 docs (400), or a declared body over 4 MB (413). 401 if unauthenticated.
 
 `If-Match` optimistic concurrency is single-doc only. The batch endpoint does not accept it; when a write must be guarded against an intervening change, edit that doc through `POST /api/agent/docs/<slug>/edits` with `If-Match`.
+
+## Search
+
+`GET /api/agent/search?q=<query>` finds owned docs whose content matches `q` and returns per-match contexts (line, column, surrounding lines). Use this before edits when you don't already know which slug to touch.
+
+```bash
+curl -sS "https://md.niftymonkey.dev/api/agent/search?q=needle" \
+  -H "Authorization: Bearer $MD_API_KEY"
+```
+
+Query params: `q` (required, non-empty), `limit` (optional, default 20, max 100).
+
+Response shape:
+
+```json
+{
+  "docs": [
+    {
+      "slug": "abc",
+      "title": "Title",
+      "kind": "essay",
+      "tags": ["foo"],
+      "matchCount": 7,
+      "matches": [
+        {
+          "line": 47,
+          "column": 1,
+          "previewLines": [
+            {"line": 46, "text": "..."},
+            {"line": 47, "text": "..."},
+            {"line": 48, "text": "..."}
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- **Two-stage matching.** Full-text search narrows the candidate docs, then a literal substring scan extracts per-match contexts. A doc surfaces only if `q` appears literally in its content; case-sensitive (matching the single-doc `replace` op). Stem-only or case-mismatch hits drop out.
+- **`matchCount` is the true total**; `matches[]` is capped at 5 per doc, with one line of context on either side. Same `{line, column, previewLines}` shape the edits endpoint uses for `ambiguous_match`.
+- **Owner-scoped.** Only docs uploaded under the calling token's owner are visible.
+- **No cursor pagination.** Tighten `q` or raise `limit` (max 100). For broad listing, use `/api/list?search=` instead.
+
+Errors: 400 if `q` is missing, empty, or whitespace-only. 401 if unauthenticated.
 
 ## List
 

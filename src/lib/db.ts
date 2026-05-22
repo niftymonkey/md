@@ -326,6 +326,55 @@ async function runSearchQuery(args: {
   return sql.query<DocSummaryRow>(text, values);
 }
 
+export type DocSearchRow = {
+  slug: string;
+  title: string;
+  kind: string | null;
+  tags: string[];
+  content: string;
+};
+
+/**
+ * Owner-scoped full-text search returning the candidate docs' content along
+ * with their metadata. Caller is expected to run per-doc literal-match
+ * extraction (typically {@link import("./match-resolver").findMatches}) over
+ * `content` and discard candidates whose literal substring is absent. Returns
+ * an empty array when the sanitized FTS query has no tokens.
+ */
+export async function searchOwnedDocsFullText(args: {
+  ownerId: string;
+  query: string;
+  limit: number;
+}): Promise<DocSearchRow[]> {
+  const tsQuery = buildTsQuery(args.query);
+  if (!tsQuery) return [];
+
+  const result = await sql.query<{
+    slug: string;
+    title: string | null;
+    kind: string | null;
+    tags: string[] | null;
+    content: string;
+  }>(
+    `SELECT slug, title, kind, tags, content
+     FROM docs
+     WHERE owner_id = $1
+       AND search_vector @@ to_tsquery('english', $2)
+     ORDER BY ts_rank(search_vector, to_tsquery('english', $2)) DESC,
+              created_at DESC,
+              id DESC
+     LIMIT $3`,
+    [args.ownerId, tsQuery, args.limit],
+  );
+  return result.rows.map((row) => ({
+    slug: row.slug,
+    title: row.title ?? "Untitled",
+    kind: row.kind,
+    tags: row.tags ?? [],
+    content: row.content,
+  }));
+}
+
 export type TagUsageRow = { tag: string; count: number };
 
 /**
