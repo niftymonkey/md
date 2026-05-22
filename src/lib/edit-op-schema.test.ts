@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseEditOp, parseEditOps, type EditOp } from "./edit-op-schema";
+import {
+  parseEditOp,
+  parseEditOps,
+  parseDocEditBatch,
+  type EditOp,
+} from "./edit-op-schema";
 
 describe("parseEditOp — replace", () => {
   it("accepts a minimal replace op", () => {
@@ -374,6 +379,89 @@ describe("parseEditOps (batch)", () => {
     if (!result.ok) {
       expect(result.error).toMatch(/\[1\]|index 1|second/i);
     }
+  });
+});
+
+describe("parseDocEditBatch", () => {
+  it("accepts a batch of per-doc entries", () => {
+    const result = parseDocEditBatch([
+      { slug: "aaa", ops: [{ type: "replace", find: "x", replace: "y" }] },
+      { slug: "bbb", ops: [{ type: "setContent", content: "# New" }] },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entries).toHaveLength(2);
+      expect(result.entries[0]!.slug).toBe("aaa");
+      expect(result.entries[0]!.ops[0]).toEqual({
+        type: "replace",
+        find: "x",
+        replace: "y",
+        replaceAll: false,
+      });
+      expect(result.entries[1]!.slug).toBe("bbb");
+    }
+  });
+
+  it("rejects a non-array", () => {
+    expect(parseDocEditBatch({}).ok).toBe(false);
+    expect(parseDocEditBatch("nope").ok).toBe(false);
+    expect(parseDocEditBatch(null).ok).toBe(false);
+  });
+
+  it("rejects an empty array", () => {
+    const result = parseDocEditBatch([]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/empty|at least/i);
+  });
+
+  it("rejects an entry that is not an object", () => {
+    const result = parseDocEditBatch(["nope"]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/operations\[0\]/);
+  });
+
+  it("rejects an entry with a missing or empty slug", () => {
+    expect(
+      parseDocEditBatch([
+        { ops: [{ type: "replace", find: "x", replace: "y" }] },
+      ]).ok,
+    ).toBe(false);
+    const result = parseDocEditBatch([
+      { slug: "", ops: [{ type: "replace", find: "x", replace: "y" }] },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/operations\[0\].*slug/i);
+  });
+
+  it("reports the entry index when an entry's ops fail validation", () => {
+    const result = parseDocEditBatch([
+      { slug: "aaa", ops: [{ type: "replace", find: "x", replace: "y" }] },
+      { slug: "bbb", ops: [{ type: "deleteLineRange", from: 5, to: 1 }] },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/operations\[1\]/);
+  });
+
+  it("rejects a duplicate slug", () => {
+    const result = parseDocEditBatch([
+      { slug: "dup", ops: [{ type: "replace", find: "x", replace: "y" }] },
+      { slug: "dup", ops: [{ type: "replace", find: "a", replace: "b" }] },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/duplicate/i);
+  });
+
+  it("propagates setContent exclusivity into each entry", () => {
+    const result = parseDocEditBatch([
+      {
+        slug: "aaa",
+        ops: [
+          { type: "setContent", content: "x" },
+          { type: "replace", find: "a", replace: "b" },
+        ],
+      },
+    ]);
+    expect(result.ok).toBe(false);
   });
 });
 

@@ -1,6 +1,6 @@
 ---
 name: md-niftymonkey
-description: Work with markdown on md.niftymonkey.dev — upload, fetch, edit, list, and delete. Use when the user asks to upload, share, or publish markdown to md.niftymonkey.dev, fetch a doc back, make targeted edits to an existing doc, replace a section by heading, preview an edit before committing, save a fresh full-doc version, or coordinate edits with optimistic concurrency. Triggers on phrases like "upload this to md.niftymonkey", "share this as a markdown link", "put this on md", "fix the typo on my md doc", "update the md doc at <slug>", "rewrite the API section on <slug>", "preview this edit on md", or pointing at a `.md` file with intent to share or modify on this service. Handles atomic find/replace, line-addressed edits, heading-addressed section replacement, dry-run validation, If-Match optimistic concurrency, and structured retry errors.
+description: Work with markdown on md.niftymonkey.dev: upload, fetch, edit, list, and delete. Use when the user asks to upload, share, or publish markdown to md.niftymonkey.dev, fetch a doc back, make targeted edits to an existing doc, replace a section by heading, preview an edit before committing, save a fresh full-doc version, coordinate edits with optimistic concurrency, or apply one set of edits across many docs at once. Triggers on phrases like "upload this to md.niftymonkey", "share this as a markdown link", "put this on md", "fix the typo on my md doc", "update the md doc at <slug>", "rewrite the API section on <slug>", "preview this edit on md", "rename a term across all my md docs", or pointing at a `.md` file with intent to share or modify on this service. Handles atomic find/replace, line-addressed edits, heading-addressed section replacement, dry-run validation, If-Match optimistic concurrency, cross-document batch edits, and structured retry errors.
 ---
 
 # md-niftymonkey
@@ -312,6 +312,49 @@ Separate from resolution errors: if you sent `If-Match` and the doc has been mod
 ### Shell trap
 
 Pipe responses straight to `jq`, or capture with `RESP=$(curl ...)` then `printf '%s' "$RESP" | jq`. Don't use `echo "$RESP" | jq` in zsh or dash — those shells' `echo` interprets escape sequences in the variable, turning `\n` in the response into real newlines and breaking the JSON. Bash's `echo` is fine, but `printf '%s'` is portable.
+
+## Cross-document edits
+
+`POST /api/agent/edits` applies edits to several docs in one call. Reach for it on fan-out tasks: rename a term everywhere it appears, append a footer to every doc of a kind, fix one typo across a set.
+
+```bash
+curl -sS -X POST https://md.niftymonkey.dev/api/agent/edits \
+  -H "Authorization: Bearer $MD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [
+      {"slug": "aB3xK9pQ", "ops": [{"type": "replace", "find": "old term", "replace": "new term", "replaceAll": true}]},
+      {"slug": "zT7mN2wL", "ops": [{"type": "replace", "find": "old term", "replace": "new term", "replaceAll": true}]}
+    ],
+    "summary": "rename old term to new term"
+  }'
+```
+
+Body shape: `{operations: [{slug, ops}], summary?: string|null, dryRun?: boolean}`. Each entry's `ops` follows the same rules as the single-doc API (every op type, snapshot-vs-running resolution, setContent exclusivity). A slug may appear at most once per request. `summary` is recorded on every written doc's revision. `dryRun: true` previews every doc without writing any.
+
+**Per-document atomic, batch best-effort.** Each doc's ops all land in one revision or none do. A failure on one doc does not roll back or block the others, so the request returns **200** with a per-doc `results` array rather than one overall status:
+
+```json
+{
+  "results": [
+    {"slug": "aB3xK9pQ", "status": "ok", "doc": {"slug": "aB3xK9pQ", "content": "..."}, "revisionId": "rv_..."},
+    {"slug": "zT7mN2wL", "status": "error", "error": "no_match", "failedAt": 0, "query": "old term"}
+  ]
+}
+```
+
+A 200 does not mean every doc changed. Inspect every entry:
+
+| `status` | Fields | Meaning |
+|---|---|---|
+| `ok` | `doc`, `revisionId` | Written. `revisionId` is `null` for a dryRun preview, or for a no-op batch whose ops resolved to identical content (no revision recorded). |
+| `error` | `error` plus matching detail fields | This doc was left untouched. See the values below. |
+
+Per-doc `error` values: `not_found` (slug unknown or owned by someone else), `content_too_large` (the result would exceed 1 MB), and every resolution error from the single-doc 409 table (`no_match`, `ambiguous_match`, `line_out_of_range`, `range_out_of_range`, `overlapping_line_ops`, `heading_not_found`, `ambiguous_heading`) carrying the same `failedAt` and detail fields.
+
+Request-level problems fail the whole call before any doc is touched: malformed JSON, a missing or empty `operations` array, a malformed op (400, naming the offending `operations[i]`), a duplicate slug (400), more than 50 docs (400), or a declared body over 4 MB (413). 401 if unauthenticated.
+
+`If-Match` optimistic concurrency is single-doc only. The batch endpoint does not accept it; when a write must be guarded against an intervening change, edit that doc through `POST /api/agent/docs/<slug>/edits` with `If-Match`.
 
 ## List
 
