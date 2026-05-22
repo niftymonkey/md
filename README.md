@@ -51,3 +51,33 @@ curl -d '{"content":"# hello","title":"My Doc"}' \
 ```
 
 Add `Accept: text/plain` to get just the URL on stdout (pipe-friendly).
+
+## Claude Code skill
+
+Anyone using Claude Code can publish, fetch, and edit markdown on md.niftymonkey.dev through a single skill — no curl recipes required. The skill teaches the full AI-First API: upload, fetch, full-replace PATCH, the targeted ops API (find/replace, line-addressed edits, heading-addressed `replaceSection`, full-doc `setContent`), `dryRun` previews, `If-Match` optimistic concurrency, and the structured 409 / 412 error shapes.
+
+The repo ships the skill at `.claude/skills/md-niftymonkey/SKILL.md`. The same content is published at `https://md.niftymonkey.dev/api/raw/80zOpiWz` and stays in sync via CI on every push to `main` that touches the skill.
+
+### Install (one curl)
+
+Pulls the published version into your Claude Code skills directory:
+
+```bash
+mkdir -p ~/.claude/skills/md-niftymonkey
+curl -sS https://md.niftymonkey.dev/api/raw/80zOpiWz \
+  > ~/.claude/skills/md-niftymonkey/SKILL.md
+```
+
+### Install (from a clone)
+
+If you already have the repo checked out:
+
+```bash
+mkdir -p ~/.claude/skills/md-niftymonkey
+cp .claude/skills/md-niftymonkey/SKILL.md \
+   ~/.claude/skills/md-niftymonkey/
+```
+
+### Token
+
+Both flows need a personal API token from `https://md.niftymonkey.dev/settings`. The skill expects it in `MD_API_KEY` in your shell environment.
