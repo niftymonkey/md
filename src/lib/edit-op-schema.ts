@@ -293,6 +293,65 @@ export function parseEditOp(input: unknown): ParseResult<EditOp> {
   }
 }
 
+/**
+ * One document's worth of work in a cross-document edit batch: a slug paired
+ * with the ops to apply to that doc. Produced by {@link parseDocEditBatch}.
+ */
+export type DocEditEntry = {
+  slug: string;
+  ops: EditOp[];
+};
+
+export type ParseDocEditBatchResult =
+  | { ok: true; entries: DocEditEntry[] }
+  | { ok: false; error: string };
+
+/**
+ * Parses the `operations` array of a cross-document edit batch. Each element
+ * is a `{slug, ops}` entry; `ops` runs through {@link parseEditOps}, so per-op
+ * shape rules and setContent exclusivity apply per entry. A slug may appear at
+ * most once: two entries for the same doc would both resolve against the
+ * pre-batch snapshot, so the second write would clobber the first.
+ */
+export function parseDocEditBatch(input: unknown): ParseDocEditBatchResult {
+  if (!Array.isArray(input)) {
+    return { ok: false, error: "operations must be an array" };
+  }
+  if (input.length === 0) {
+    return { ok: false, error: "operations must contain at least one entry" };
+  }
+  const entries: DocEditEntry[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < input.length; i++) {
+    const entry = input[i];
+    if (!isPlainObject(entry)) {
+      return {
+        ok: false,
+        error: `operations[${i}]: entry must be a plain object`,
+      };
+    }
+    if (typeof entry.slug !== "string" || entry.slug.length === 0) {
+      return {
+        ok: false,
+        error: `operations[${i}]: slug must be a non-empty string`,
+      };
+    }
+    if (seen.has(entry.slug)) {
+      return {
+        ok: false,
+        error: `operations[${i}]: duplicate slug "${entry.slug}" (each slug may appear once)`,
+      };
+    }
+    const parsed = parseEditOps(entry.ops);
+    if (!parsed.ok) {
+      return { ok: false, error: `operations[${i}]: ${parsed.error}` };
+    }
+    seen.add(entry.slug);
+    entries.push({ slug: entry.slug, ops: parsed.ops });
+  }
+  return { ok: true, entries };
+}
+
 export function parseEditOps(input: unknown): ParseBatchResult {
   if (!Array.isArray(input)) {
     return { ok: false, error: "ops must be an array" };

@@ -3,65 +3,17 @@ import { revalidatePath } from "next/cache";
 import { writeDocContent } from "@/lib/doc-mutation-path";
 import { resolveTitle } from "@/lib/title";
 import { stripMarkdown } from "@/lib/strip-md";
-import { jsonError, requireOwnedDoc } from "@/lib/route-helpers";
+import {
+  applierErrorBody,
+  jsonError,
+  requireOwnedDoc,
+} from "@/lib/route-helpers";
 import { parseEditOps } from "@/lib/edit-op-schema";
-import { apply, type ApplierError } from "@/lib/operation-applier";
+import { apply } from "@/lib/operation-applier";
 
 const MAX_BYTES = 1024 * 1024;
 
 type Body = { ops?: unknown; summary?: unknown; dryRun?: unknown };
-
-function applierErrorBody(
-  error: ApplierError,
-  failedAt: number,
-): Record<string, unknown> {
-  switch (error.kind) {
-    case "no_match":
-      return { error: "no_match", failedAt, query: error.query };
-    case "ambiguous_match":
-      return {
-        error: "ambiguous_match",
-        failedAt,
-        query: error.query,
-        matchCount: error.matchCount,
-        matches: error.matches,
-      };
-    case "line_out_of_range":
-      return {
-        error: "line_out_of_range",
-        failedAt,
-        line: error.line,
-        documentLines: error.documentLines,
-      };
-    case "range_out_of_range":
-      return {
-        error: "range_out_of_range",
-        failedAt,
-        from: error.from,
-        to: error.to,
-        documentLines: error.documentLines,
-      };
-    case "overlapping_line_ops":
-      return {
-        error: "overlapping_line_ops",
-        failedAt,
-        conflictsWith: error.conflictsWith,
-      };
-    case "heading_not_found":
-      return {
-        error: "heading_not_found",
-        failedAt,
-        headingPath: error.headingPath,
-      };
-    case "ambiguous_heading":
-      return {
-        error: "ambiguous_heading",
-        failedAt,
-        headingPath: error.headingPath,
-        matchCount: error.matchCount,
-      };
-  }
-}
 
 export async function POST(
   req: NextRequest,
